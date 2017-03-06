@@ -121,7 +121,6 @@
 / Performs the initialisation of the specified library. Assumes .*lib*.init[]. Also checks for
 / .*lib*.*stack*.init[] and executes if exists (if not present, ignored).
 /  @throws UnknownLibraryException If the library is not loaded
-/  @throws NoInitFunctionException If the .*lib*.init[] function does not exist
 /  @throws LibraryInitFailedException If the init function throws an exception
 .require.i.init:{[lib]
     if[not lib in key .require.loadedLibs;
