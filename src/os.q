@@ -16,7 +16,12 @@
 / every command has the equivalent parameters in each Operating System environment.
 /  @param cmd (Symbol) The OS command to run
 /  @param paramStr (String) The list of parameters to pass to the command
+/  @throws UnsupportedOsCommandException If the command specified is not supported on this OS
 .os.run:{[cmd;paramStr]
+    if[not cmd in .os.availableCommands[];
+        '"UnsupportedOsCommandException (",string[cmd],")";
+    ];
+
     :.util.system .os[.os.type][cmd] paramStr;
  };
 
