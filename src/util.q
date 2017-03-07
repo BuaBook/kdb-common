@@ -43,7 +43,7 @@
 /  @param t (Table) The table to pivot. NOTE: Should be unkeyed and contain no enumerated columns
 /  @param c (Symbol) The column to pick for the pivot. Each distinct value of this column will be used as a column in the pivot
 /  @param r (Symbol|SymbolList) The columns that will form the rows of the pivot. Can have multiple here
-/  @param d (Symbol) The column of that that is pivoted
+/  @param d (Symbol) The column of data that is pivoted
 /  @return (Table) The pivoted data
 .util.pivot:{[t;c;r;d]
     colData:?[t;();();(distinct;c)];
@@ -74,6 +74,7 @@
 / @param t (Table)
 / @param oldC (Symbol|SymbolList) Existing column(s) in table to rename
 / @param newC (Symbol|SymbolList) Column name(s) to replace with
+/ @throws InvalidColumnToRenameException If any of the existing columns specified do not exist
 .util.renameColumn:{[t;oldC;newC]
     if[not .type.isTable t;
         '"IllegalArgumentException";

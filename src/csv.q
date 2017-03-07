@@ -42,7 +42,7 @@
  };
 
 / Writes the specified table to the specified path in CSV format
-/  @param path (Filepath) The path to save the CSV file
+/  @param path (FilePath) The path to save the CSV file
 /  @param table (Table) The table to convert to CSV
 /  @throws UnsupportedColumnTypeException If the table contains nested list columns
 .csv.write:{[path;data]

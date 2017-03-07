@@ -79,7 +79,7 @@
 / Recurseively desecends from the specified root folder down and lists all 
 / files within each folder until no more folders are found. NOTE: Symbolic
 / links will be treated as a folder, so ensure there are no circular references.
-/  @param (FolderPath) The root directory to start the tree from
+/  @param root (FolderPath) The root directory to start the tree from
 /  @return (FilePathList) All files, fully qualified, discovered from root down
 .file.tree:{[root]
     rootContents:.file.listFolderPaths root;
