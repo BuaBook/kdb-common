@@ -20,7 +20,7 @@
 /  @param p (Integer) The precision to round to
 /  @param x (Real|Float) The value to round
 /  @return (Real|Float) The rounded value
-.util.round:{[p;x](`int$n*x)%n:prd p#10};                 / sets the precision for a float
+.util.round:{[p;x](`int$n*x)%n:prd p#10};
 
 / Extended version of the standard trim function. As well as removing spaces, it also removes
 / new line and tab characters
