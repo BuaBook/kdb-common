@@ -9,10 +9,11 @@
 
 / Sends an e-mail on the calling process. This function also supports sending HTML e-mail
 / NOTE: The process will hang until the mail has been sent by the underlying process.
+/  @param dict (Dictionary) Required keys - subject (String), to (Symbol|SymbolList). Optional keys - cc (Symbol|SymbolList), bcc (Symbol|SymbolList), body (String), attachments (FilePathList), deleteAttachments (Boolean)
 /  @throws MissingArgumentException If any required arguments are missing
-/  @throws InvalidMailTypeException If the mail type is not one of the supported ones
 /  @throws InvalidEmailAttachmentPathException If any of the attachments have a space in the path (not supported)
-.mail.sendLocal:{[dict]
+/  @throws EmailSendFailedException If mailx returns any error
+.mail.send:{[dict]
     if[not all .mail.cfg.requiredArgs in key dict;
         '"MissingArgumentException (All of ",.Q.s1[.mail.cfg.requiredArgs],")";
     ];
