@@ -5,7 +5,7 @@
 
 / Gets the contents of the specified namespace and returns them fully qualified
 /  @param ns (Symbol) The namespace to get the contents of
-/  @return (SymbolList) The contents of the namespace fully qualified
+/  @returns (SymbolList) The contents of the namespace fully qualified
 .ns.get:{[ns]
     if[not .type.isSymbol ns;
         '"IllegalArgumentException";
@@ -21,7 +21,7 @@
 / Recurses down from the specified root namespace until no more namespaces are found. 
 / All returned elements are fully qualified
 /  @param ns (Symbol) The root namespace to flatten from
-/  @return (SymbolList) All elements of namespace and child namespaces
+/  @returns (SymbolList) All elements of namespace and child namespaces
 .ns.flatten:{[ns]
     nsElements:.ns.get ns;
     subNs:nsElements where .type.isNamespace each get each nsElements;
@@ -31,7 +31,7 @@
 
 / Attempts to resolve the specified function <i>body</i> back into the declared function name.
 /  @param func (Function) The body of the function
-/  @return (Symbol) The name of the function, or null symbol if it could not be calculated
+/  @returns (Symbol) The name of the function, or null symbol if it could not be calculated
 .ns.resolveFunctionName:{[func]
     if[not .type.isFunction func;
         '"IllegalArgumentException";
@@ -51,14 +51,14 @@
  };
 
 / @param x (Symbol) The reference to check
-/ @return (Boolean) True if the specified reference exists, false otherwise
+/ @returns (Boolean) True if the specified reference exists, false otherwise
 .ns.isSet:{
     res:@[get;x;{ (`REF_NO_EXIST;x) }];
     :not `REF_NO_EXIST~first res;
  };
 
 / @param x (Symbol|Function) The function to check the arguments for
-/ @return (SymbolList) The arguments required for the specified function
+/ @returns (SymbolList) The arguments required for the specified function
 / @throws FunctionDoesNotExistException If a symbol reference specified does not exist
 / @see .ns.isSet
 .ns.getFunctionArguments:{

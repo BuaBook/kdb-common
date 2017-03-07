@@ -117,7 +117,7 @@
     :x~distinct x;
  };
 
-/ @return (Symbol) A symbol version of the input
+/ @returns (Symbol) A symbol version of the input
 .type.ensureSymbol:{
     if[.type.isSymbol x;
         :x;
@@ -130,7 +130,7 @@
     :`$x;
  };
 
-/ @return (String) A string version of the input
+/ @returns (String) A string version of the input
 .type.ensureString:{
     if[.type.isString x;
         :x;

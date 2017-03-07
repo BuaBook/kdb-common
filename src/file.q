@@ -6,7 +6,7 @@
 
 / Lists the contents of the specified folder
 /  @param folder (FolderPath) The folder to list the contents for
-/  @return (FilePathList) The files and folders within the folder
+/  @returns (FilePathList) The files and folders within the folder
 /  @throws IllegalArgumentException If the parameter is not a path type
 .file.ls:.file.listFolder:{[folder]
     if[not .type.isFilePath folder;
@@ -18,7 +18,7 @@
 
 / Lists the contents of the specified folder, returning fully qualified paths for each
 /  @param folder (FolderPath) The folder to list the contents for
-/  @return (FilePathList) The fully qualified files and folders within the folder
+/  @returns (FilePathList) The fully qualified files and folders within the folder
 /  @throws IllegalArgumentException If the parameter is not a path type
 .file.listFolderPaths:{[folder]
     if[not .type.isFilePath folder;
@@ -31,7 +31,7 @@
 / Finds the files and folders within the specified folder that match the supplied file regex
 /  @param fileRegex (Symbol|String) The part to find. If a symbol, will be surrounded by *. If a string, used as is
 /  @param folder (FolderPath) The folder to find within
-/  @return (FilePathList)
+/  @returns (FilePathList)
 /  @throws IllegalArgumentException If the parameter is not a path type
 .file.find:{[fileRegex;folder]
     if[not .type.isFilePath folder;
@@ -51,7 +51,7 @@
 / returning fully qualified paths for each
 /  @param fileRegex (Symbol|String) The part to find. If a symbol, will be surrounded by *. If a string, used as is
 /  @param folder (FolderPath) The folder to find within
-/  @return (FilePathList)
+/  @returns (FilePathList)
 /  @throws IllegalArgumentException If the parameter is not a path type
 /  @see .file.find
 .file.findFilePaths:{[fileRegex;folder]
@@ -60,7 +60,7 @@
 
 / Checks the existance of the specified folder and creates an empty folder if it does not exist
 /  @param dir (FolderPath)
-/  @return (FolderPath) The supplied folder to check
+/  @returns (FolderPath) The supplied folder to check
 .file.ensureDir:{[dir]
   if[not .type.isFolder dir;
     .log.info "Directory does not exist, creating [ Directory: ",string[dir]," ]";
@@ -80,7 +80,7 @@
 / files within each folder until no more folders are found. NOTE: Symbolic
 / links will be treated as a folder, so ensure there are no circular references.
 /  @param root (FolderPath) The root directory to start the tree from
-/  @return (FilePathList) All files, fully qualified, discovered from root down
+/  @returns (FilePathList) All files, fully qualified, discovered from root down
 .file.tree:{[root]
     rootContents:.file.listFolderPaths root;
     folders:.type.isFolder each rootContents;

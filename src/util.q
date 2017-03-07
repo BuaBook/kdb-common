@@ -6,7 +6,7 @@
 
 / We define the use of the system command argument "-e" to also define if the
 / process is started in debug mode or not
-/  @return (Boolean) If the current process is in debug mode or not
+/  @returns (Boolean) If the current process is in debug mode or not
 .util.inDebugMode:{ `boolean$system"e" };
 
 / Simple wrapper around the system command. Throws an exception if the command fails
@@ -19,13 +19,13 @@
 / Rounds floats to the specified precision
 /  @param p (Integer) The precision to round to
 /  @param x (Real|Float) The value to round
-/  @return (Real|Float) The rounded value
+/  @returns (Real|Float) The rounded value
 .util.round:{[p;x](`int$n*x)%n:prd p#10};
 
 / Extended version of the standard trim function. As well as removing spaces, it also removes
 / new line and tab characters
 /  @param str (String) The string to trim
-/  @return (String) The string with characters trimmed
+/  @returns (String) The string with characters trimmed
 .util.trim:{[str]
     :{y _ x}/[str;(first;{ -1*-1+y-last x }[;count str])@\:where not any str =/:(" ";"\n";"\t";"\r")];
  };
@@ -34,7 +34,7 @@
 .util.zeroFill:{@[x;where not abs[type each $[.Q.qt x;cols x;x]]in 2 10 11h;0b^]};
 
 / Improved version of null to also detect empty lists and dictionaries
-/  @return (Boolean) If the specified object is null or empty
+/  @returns (Boolean) If the specified object is null or empty
 .util.isEmpty:{
     :(all/) null x;
  };
@@ -44,7 +44,7 @@
 /  @param c (Symbol) The column to pick for the pivot. Each distinct value of this column will be used as a column in the pivot
 /  @param r (Symbol|SymbolList) The columns that will form the rows of the pivot. Can have multiple here
 /  @param d (Symbol) The column of data that is pivoted
-/  @return (Table) The pivoted data
+/  @returns (Table) The pivoted data
 .util.pivot:{[t;c;r;d]
     colData:?[t;();();(distinct;c)];
 
@@ -57,7 +57,7 @@
 
 / Unenumerates any enumerated columns of the specified table
 /  @param t (Table) Table to process. NOTE: Should be unkeyed
-/  @return (Table) The same table with any enumerated columns unenumerated
+/  @returns (Table) The same table with any enumerated columns unenumerated
 .util.unenumerate:{[t]
     enumCols:where .type.isEnumeration each .Q.V t;
 
@@ -90,7 +90,7 @@
     :?[t;();0b;selectCols];
  };
 
-/ @return (Symbol) OS independent process architecture 
+/ @returns (Symbol) OS independent process architecture 
 .util.getProcessArchitecture:{
     bits:"I"$-2#string .z.o;
 
@@ -103,7 +103,7 @@
     ];
  };
 
-/ @return (Time) The time difference of the process
+/ @returns (Time) The time difference of the process
 .util.getLocalTimeDifference:{
     :.z.T - .z.t;
  };

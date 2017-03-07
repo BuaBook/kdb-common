@@ -150,7 +150,7 @@
     ];
  };
 
-/ @return (FolderPath) The current working directory using the OS specific command
+/ @returns (FolderPath) The current working directory using the OS specific command
 / @throws OsNotSupportedForCwdException If the operating system is not supported
 .require.i.getCwd:{
     os:first string .z.o;

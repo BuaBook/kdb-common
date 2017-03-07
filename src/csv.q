@@ -8,7 +8,7 @@
 / empty lines and comment lines (lines beginning with a forward slash)
 /  @param types (String) The types of each column
 /  @param path (FilePath) The location of the file to load
-/  @return (Table) The CSV file as a table
+/  @returns (Table) The CSV file as a table
 /  @see .csv.parse
 .csv.load:{[types;path]
   if[not .type.isFilePath path;
@@ -24,7 +24,7 @@
 / and comment lines (lines beginning with a forward slash)
 /  @param types (String) The types of each column
 /  @param csvData (List) String list of file lines
-/  @return (Table) The CSV data as a table
+/  @returns (Table) The CSV data as a table
 /  @throws CorruptCsvDataException If there are any column lengths of the CSV data that mismatch
 /  @throws TypesMismatchException If there are any missing columns based on the expected types
 .csv.parse:{[types;csvData]

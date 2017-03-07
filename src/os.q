@@ -25,7 +25,7 @@
     :.util.system .os[.os.type][cmd] paramStr;
  };
 
-/  @return (SymbolList) All the available commands in the current operating system
+/  @returns (SymbolList) All the available commands in the current operating system
 .os.availableCommands:{
     :key 1_ .os .os.type;
  };
