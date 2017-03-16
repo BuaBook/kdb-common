@@ -48,6 +48,10 @@
     :"del ",x;
  };
 
+.os.w.rmF:{
+    :"del /F ",x;
+ };
+
 
 // Linux Implementation
 
@@ -64,7 +68,11 @@
  };
 
 .os.l.rm:{
-    "rm -v ",x;
+    :"rm -v ",x;
+ };
+
+.os.l.rmF:{
+    :"rm -vf ",x;
  };
 
 
