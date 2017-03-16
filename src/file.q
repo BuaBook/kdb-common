@@ -21,11 +21,7 @@
 /  @returns (FilePathList) The fully qualified files and folders within the folder
 /  @throws IllegalArgumentException If the parameter is not a path type
 .file.listFolderPaths:{[folder]
-    if[not .type.isFilePath folder;
-        '"IllegalArgumentException";
-    ];
-
-    :` sv/:folder,/:key folder;
+    :` sv/:folder,/:.file.listFolder folder;
  };
 
 / Finds the files and folders within the specified folder that match the supplied file regex
@@ -62,18 +58,18 @@
 /  @param dir (FolderPath)
 /  @returns (FolderPath) The supplied folder to check
 .file.ensureDir:{[dir]
-  if[not .type.isFolder dir;
-    .log.info "Directory does not exist, creating [ Directory: ",string[dir]," ]";
-    .os.run[`mkdir;.convert.hsymToString dir];
-  ];
+    if[not .type.isFolder dir;
+        .log.info "Directory does not exist, creating [ Directory: ",string[dir]," ]";
+        .os.run[`mkdir;.convert.hsymToString dir];
+    ];
 
-  :dir;
+    :dir;
  };
 
 / Loads the specified directory
 /  @param dir (FolderPath)
 .file.loadDir:{[dir]
-  .util.system "l ",.convert.hsymToString dir;
+    .util.system "l ",.convert.hsymToString dir;
  };
 
 / Recurseively desecends from the specified root folder down and lists all 
@@ -88,3 +84,8 @@
     :raze (rootContents where not folders),.z.s each rootContents where folders;
  };
 
+/  @returns (FolderPath) The current working directory
+/  @see .os.run
+.file.getCwd:{
+    :hsym `$first .os.run[`pwd;::];
+ };
