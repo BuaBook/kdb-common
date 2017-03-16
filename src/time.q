@@ -8,14 +8,20 @@
 // We default to assuming GMT times
 
 
-/ @return (Timestamp) The current date and time to nanosecond precision
+/ @returns (Timestamp) The current date and time to nanosecond precision
 .time.now:{ .z.p };
 
-/ @return (Time) The current time to millisecond precision
+/ @returns (Time) The current time to millisecond precision
 .time.nowAsTime:{ .z.t };
 
-/ @return (Timespan) The current time to nanosecond precision
+/ @returns (Timespan) The current time to nanosecond precision
 .time.nowAsTimespan:{ .z.n };
 
-/ @return (Date) The current date
+/ @returns (Date) The current date
 .time.today:{ .z.d };
+
+
+/ @returns (Time) The time difference of the current process
+.time.getLocalTimeDifference:{
+    :.z.T - .z.t;
+ };

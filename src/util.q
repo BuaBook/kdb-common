@@ -103,11 +103,6 @@
     ];
  };
 
-/ @returns (Time) The time difference of the process
-.util.getLocalTimeDifference:{
-    :.z.T - .z.t;
- };
-
 / Modified .Q.s to not obey the console height and width limits as specified
 / by system"c". NOTE: For tables, the console height and width limits will
 / still apply to list-type cells
