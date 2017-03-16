@@ -1,7 +1,7 @@
 // Operating System Specific Functionality
 // Copyright (c) 2017 Sport Trades Ltd
 
-.require.lib `util;
+.require.lib each `util`type;
 
 / The current operating system, independent of architecture
 /  @see .os.i.getOsType
@@ -17,9 +17,14 @@
 /  @param cmd (Symbol) The OS command to run
 /  @param paramStr (String) The list of parameters to pass to the command
 /  @throws UnsupportedOsCommandException If the command specified is not supported on this OS
+/  @throws IllegalArgumentException If the parameter argument is not a string
 .os.run:{[cmd;paramStr]
     if[not cmd in .os.availableCommands[];
         '"UnsupportedOsCommandException (",string[cmd],")";
+    ];
+
+    if[not[.util.isEmpty paramStr] & not .type.isString paramStr;
+        '"IllegalArgumentException";
     ];
 
     :.util.system .os[.os.type][cmd] paramStr;
@@ -33,11 +38,11 @@
 // Windows Implementation
 
 .os.w.mkdir:{
-    :"mkdir ",x;
+    :"mkdir ",.os.i.convertPathForWindows x;
  };
 
 .os.w.rmdir:{
-    :"rmdir ",x;
+    :"rmdir ",.os.i.convertPathForWindows x;
  };
 
 .os.w.pwd:{
@@ -45,11 +50,11 @@
  };
 
 .os.w.rm:{
-    :"del ",x;
+    :"del ",.os.i.convertPathForWindows x;
  };
 
 .os.w.rmF:{
-    :"del /F ",x;
+    :"del /F ",.os.i.convertPathForWindows x;
  };
 
 
@@ -78,4 +83,8 @@
 
 .os.i.getOsType:{
     :`$first string .z.o;
+ };
+
+.os.i.convertPathForWindows:{[path]
+    :ssr[path;"/";"\\"];
  };
