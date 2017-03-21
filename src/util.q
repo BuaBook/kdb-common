@@ -9,6 +9,9 @@
 /  @returns (Boolean) If the current process is in debug mode or not
 .util.inDebugMode:{ `boolean$system"e" };
 
+/  @returns (Boolean) True if the process is bound to a port, false if not
+.util.isListening:{ `boolean$system"p" };
+
 / Simple wrapper around the system command. Throws an exception if the command fails
 /  @throws SystemCallFailedException If the system command does not complete successfully
 .util.system:{[cmd]
