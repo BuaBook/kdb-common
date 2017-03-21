@@ -22,7 +22,7 @@
 .require.init:{[root]
     $[null root;
         .require.location.root:.require.i.getCwd[];
-        .require.location.root:root;
+        .require.location.root:root
     ];
 
     (.require.markLibAsLoaded;.require.markLibAsInited)@\:`require;
