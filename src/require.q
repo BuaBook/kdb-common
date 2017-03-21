@@ -180,7 +180,9 @@
  };
 
 
+.log.debug:-1
 .log.info:-1;
 .log.warn:-1;
 .log.error:-2;
+.log.fatal:-2;
 
