@@ -38,7 +38,9 @@
     set[`.z.ts; .cron.ts];
     .cron.enable[];
 
-    .cron.addRepeatForeverJob[`.cron.cleanStatus;(::);`timestamp$.z.d+1;1D];
+    if[not `.cron.cleanStatus in exec func from .cron.jobs;
+        .cron.addRepeatForeverJob[`.cron.cleanStatus;(::);`timestamp$.z.d+1;1D];
+    ];
  };
 
 
