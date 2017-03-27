@@ -34,3 +34,10 @@
 .convert.stringToHsym:{
     :hsym .type.ensureSymbol x;
  };
+
+/ @param ipO (Integer) An IP address in octal format (e.g. .z.a)
+/ @returns (Symbol) An IPv4 address
+.convert.ipOctalToSymbol:{[ipO]
+    :`$"." sv string "h"$0x0 vs ipO;
+ };
+

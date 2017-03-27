@@ -49,6 +49,10 @@
     :.type.isSymbol[x] & ":"~first string x;
  };
 
+.type.isHostPort:{
+    :.type.isInteger[x] | (.type.isSymbol[x] & 2 <= count where ":" = string x);
+ };
+
 .type.isDict:.type.isDictionary:{
     :99h~type x;
  };
@@ -141,4 +145,17 @@
     ];
 
     :string x;
+ };
+
+/ @returns (HostPort) A valid host/port connection symbol, converting a port only input as appropriate
+.type.ensureHostPortSymbol:{
+    if[not .type.isHostPort x;
+        '"IllegalArgumentException";
+    ];
+
+    if[.type.isInteger x;
+       : `$"::",string x;
+    ];
+
+    :x;
  };
