@@ -198,19 +198,19 @@
 / Executes the specified cron job
 /  @param jobId (Long) The cron job to run now
 /  @returns (Boolean) If the job executed successfully or not
-/  @see .cron.i.execute
+/  @see .ns.protectedExecute
 .cron.i.run:{[jobId]
     jobDetails:.cron.jobs jobId;
 
     startTimer:.time.now[];
 
-    result:.cron.i.execute . jobDetails`func`args;
+    result:.ns.protectedExecute . jobDetails`func`args;
 
     endTimer:.time.now[];
 
     status:1b;
 
-    if[`CRON_RUN_FAILED~first result;
+    if[.ns.const.pExecFailure~first result;
         .log.error "Cron job failed to execute [ Job ID: ",string[jobId]," ]. Error - ",last result;
         status:0b;
         result:last result;
@@ -221,20 +221,5 @@
     ];
 
     :status;
- };
-
-/ Executes the underlying cron job function. First checks the number of arguments expected by the 
-/ function to execute and then uses protected execution to run it
-/  @param func (Symbol) The function to execute
-/  @param args () The arguments to pass to the function
-/  @returns () The result of the function or a list <code>(`CRON_RUN_FAILED;error)</code> if it fails
-.cron.i.execute:{[func;args]
-    funcArgCount:count .ns.getFunctionArguments func;
-
-    if[1 = funcArgCount;
-        args:enlist args;
-    ];
-
-    :.[get func; args; { (`CRON_RUN_FAILED;x) }];
  };
 

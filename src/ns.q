@@ -3,6 +3,11 @@
 
 .require.lib `type;
 
+
+/ Value to check if the execution fails in .ns.protectedExecute
+/  @see .ns.protectedExecute
+.ns.const.pExecFailure:`PROT_EXEC_FAILED;
+
 / Gets the contents of the specified namespace and returns them fully qualified
 /  @param ns (Symbol) The namespace to get the contents of
 /  @returns (SymbolList) The contents of the namespace fully qualified
@@ -71,4 +76,19 @@
     ];
 
     :@[;1] get x;
+ };
+
+/ Executes the specified function with the specified arguments. First checks the number of arguments
+/ expected by the function to execute and then uses protected execution (try/catch) to run it
+/  @param func (Symbol) The function to execute
+/  @param args () The arguments to pass to the function. Pass generic null (::) if function requires no arguments
+/  @returns () The results of the function or a list (`PROT_EXEC_FAILED;theError) if it fails
+.ns.protectedExecute:{[func;args]
+    funcArgCount:count .ns.getFunctionArguments func;
+
+    if[1 = funcArgCount;
+        args:enlist args;
+    ];
+
+    :.[get func; args; { (.ns.const.pExecFailure;x) }];
  };
