@@ -113,3 +113,16 @@
 k).util.showNoLimit:{
     :`/:$[10h=@r:@[.Q.S[2#0Wi-1;0];x;::];,-3!x;r];
  };
+
+/ Modified .Q.s to allow output to be tabbed by the specified number of tabs. Useful for
+/ formatting of log output
+/  @see .Q.s
+.util.showTabbed:{[tabCount;x]
+    if[not .type.isString x;
+        x:.Q.s x;
+    ];
+
+    tabs:raze tabCount#enlist "\t";
+
+    :tabs,("\r\n",tabs) sv "\r\n" vs x;
+ };
