@@ -67,11 +67,11 @@
 / @throws FunctionDoesNotExistException If a symbol reference specified does not exist
 / @see .ns.isSet
 .ns.getFunctionArguments:{
-    if[not .ns.isSet x;
-        '"FunctionDoesNotExistException (",string[x],")";
-    ];
+    if[.type.isSymbol x;
+        if[not .ns.isSet x;
+            '"FunctionDoesNotExistException (",string[x],")";
+        ];
 
-    if[not .type.isFunction x;
         x:get x;
     ];
 
@@ -92,3 +92,30 @@
 
     :.[get func; args; { (.ns.const.pExecFailure;x) }];
  };
+
+/ Allows a function to be executed with a dictionary of arguments mapping back to the original arguments required
+/ by that function. Functions exposed on a gateway process generally require the use of dictionaries but this allows
+/ the underlying function to use standard arguments. This function will also validate that all the expected arguments
+/ of the function are present.
+/  @param func (Symbol|Function) The function to execute
+/  @param args (Dict) The arguments of the function with the key as that argument name
+/  @throws MissingFunctionArgumentException If any arguments are missing in the dictionary
+/  @returns () Result of the function
+/  @see .ns.getFunctionArguments
+.ns.executeFuncWithDict:{[func;args]
+    funcArgs:.ns.getFunctionArguments func;
+
+    / If function takes a single "x" argument and no arguments passed, assume no argument function
+    if[(enlist[`x]~funcArgs) & 0 = count args;
+        args:enlist[`x]!enlist (::);
+    ];
+
+    argCheck:where not funcArgs in key args;
+
+    if[0 < count argCheck;
+        '"MissingFunctionArgumentException (",.Q.s1[funcArgs argCheck],")";
+    ];
+
+    :func . args funcArgs;   
+ };
+
