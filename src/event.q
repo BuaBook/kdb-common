@@ -36,13 +36,8 @@
 / to execute they will be logged after all listeners have completed.
 /  @param event (Symbol) The event to fire
 /  @param args () The arguments to pass to each listener function
-/  @throws InvalidEventToFireException If the event does not exist in the event configuration
 /  @see .ns.protectedExecute
 .event.fire:{[event;args]
-    if[not event in key .event.handlers;
-        '"InvalidEventToFireException (",string[event],")";
-    ];
-
     listeners:.event.handlers event;
 
     if[0=count listeners;
