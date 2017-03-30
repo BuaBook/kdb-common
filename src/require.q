@@ -88,13 +88,13 @@
 /  @throws LibraryDoesNotExistException If no files are found for the specified library
 /  @throws LibraryLoadException If any of the library files fail to load
 .require.i.load:{[lib]
-    .log.info "Loading library: ",.Q.s1 lib;
+    .log.info "Loading library: ",string lib;
 
     libFiles:.require.i.findFiles[lib;.require.location.discovered];
 
     if[0~count libFiles;
-        .log.error "No files found for library [ Lib: ",.Q.s1[lib]," ]";
-        '"LibraryDoesNotExistException (",.Q.s1[lib],")";
+        .log.error "No files found for library [ Lib: ",string[lib]," ]";
+        '"LibraryDoesNotExistException (",string[lib],")";
     ];
 
     {
@@ -146,7 +146,7 @@
         
         .require.markLibAsInited lib;
 
-        .log.info "Initialised library: ",.Q.s1 lib;
+        .log.info "Initialised library: ",string lib;
     ];
  };
 
