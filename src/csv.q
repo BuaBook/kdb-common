@@ -1,7 +1,7 @@
 // CSV Parsing and Writing Functions
 // Copyright (c) 2016 - 2017 Sport Trades Ltd
 
-.require.lib each `type`util;
+.require.lib each `type`util`convert;
 
 
 / Attempts to load a CSV based on the specified column types, ignoring
@@ -55,7 +55,7 @@
     ];
 
     if[any unsupported:" "~/:.Q.ty each .Q.V data;
-        '"UnsupportedColumnTypeException (",.Q.s1[where unsupported],")";
+        '"UnsupportedColumnTypeException (",.convert.listToString[where unsupported],")";
     ];
 
     .log.info "Saving CSV file [ Target: ",string[path]," ] [ Table Length: ",string[count data]," ]";

@@ -140,7 +140,7 @@
         ];
 
         if[`INIT_FUNC_ERROR~first initRes;
-            .log.error "Init function (",string[initFname],") failed to execute successfully [ Lib: ",.Q.s1[lib]," ]. Error - ",last initRes;
+            .log.error "Init function (",string[initFname],") failed to execute successfully [ Lib: ",string[lib]," ]. Error - ",last initRes;
             '"LibraryInitFailedException (",string[initFname],")";
         ];
         

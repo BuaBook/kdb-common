@@ -1,7 +1,7 @@
 // Internal Event Management
 // Copyright (c) 2017 Sport Trades Ltd
 
-.require.lib each `ns`time;
+.require.lib each `ns`time`convert;
 
 / Event names and functions to bind to. These "core" handlers are specified on initialisation
 / if the functions are not already in use
@@ -51,7 +51,7 @@
     listenErr:where .ns.const.pExecFailure~/:first each listenRes;
 
     if[0 < count listenErr;
-        .log.warn "One or more listeners failed to execute successfully [ Event: ",string[event]," ] [ Errored: ",.Q.s1[listenErr]," ]";
+        .log.warn "One or more listeners failed to execute successfully [ Event: ",string[event]," ] [ Errored: ",.convert.listToString[listenErr]," ]";
         .log.warn "Listener exception detail:\n",.Q.s listenErr#last each listenRes;
         :(::);
     ];
@@ -68,7 +68,7 @@
     ];
 
     if[not .ns.isSet listenFunction;
-        '"FunctionDoesNotExistException (",.Q.s1[listenFunction],")";
+        '"FunctionDoesNotExistException (`",string[listenFunction],")";
     ];
 
     if[not event in key .event.handlers;

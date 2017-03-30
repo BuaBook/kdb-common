@@ -41,3 +41,8 @@
     :`$"." sv string "h"$0x0 vs ipO;
  };
 
+/ @returns (String) The specified list as a string separated by commas. Useful for logging
+.convert.listToString:{[list]
+    :", " sv .type.ensureString list;
+ };
+

@@ -1,7 +1,7 @@
 // E-mail Sending via mailx
 // Copyright (c) 2016 Sport Trades Ltd
 
-.require.lib each `util`os;
+.require.lib each `util`os`convert;
 
 
 / The required arguments in order to send an e-mail
@@ -14,8 +14,10 @@
 /  @throws InvalidEmailAttachmentPathException If any of the attachments have a space in the path (not supported)
 /  @throws EmailSendFailedException If mailx returns any error
 .mail.send:{[dict]
-    if[not all .mail.cfg.requiredArgs in key dict;
-        '"MissingArgumentException (All of ",.Q.s1[.mail.cfg.requiredArgs],")";
+    argCheck:where not .mail.cfg.requiredArgs in key dict;
+
+    if[0 < count argCheck;
+        '"MissingArgumentException (",.convert.listToString[.mail.cfg.requiredArgs argCheck],")";
     ];
 
     if[.util.isEmpty dict`deleteAttachments;
@@ -57,17 +59,17 @@
 
     mailStr,:" ",.mail.i.getEmailAddresses dict`to;
 
-    .log.info "Sending e-mail [ To: ",.Q.s1[dict`to]," ] [ Subject: ",dict[`subject]," ]";
+    .log.info "Sending e-mail [ To: ",.convert.listToString[dict`to]," ] [ Subject: ",dict[`subject]," ]";
 
     res:@[.util.system;mailStr;{ (`MAILX_FAILED;x) }];
 
     if[`MAILX_FAILED~first res;
-        .log.error "Failed to send e-mail [ To: ",.Q.s1[dict`to]," ] [ Subject: ",dict[`subject]," ]. Error - ",last res;
+        .log.error "Failed to send e-mail [ To: ",.convert.listToString[dict`to]," ] [ Subject: ",dict[`subject]," ]. Error - ",last res;
         '"EmailSendFailedException";
     ];
 
     if[(not .util.isEmpty dict`attachments) & dict`deleteAttachments;
-        .log.info "Deleting attachments after successful send as requested [ Attachments: ",.Q.s1[dict`attachments]," ]";
+        .log.info "Deleting attachments after successful send as requested [ Attachments: ",.convert.listToString[dict`attachments]," ]";
         .os.run[`rm;] each 1_/:string (),dict`attachments;
     ];
 

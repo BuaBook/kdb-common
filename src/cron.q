@@ -86,7 +86,7 @@
     ];
 
     if[not runType in key .cron.cfg.runners;
-        .log.error "Invalid cron run type. Expecting one of: ",.Q.s1 key .cron.cfg.runners;
+        .log.error "Invalid cron run type. Expecting one of: ",.convert.listToString key .cron.cfg.runners;
         '"InvalidCronRunTypeException";
     ];
 

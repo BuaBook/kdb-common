@@ -1,7 +1,7 @@
 // Namespace Management Functions
 // Copyright (c) 2016 - 2017 Sport Trades Ltd
 
-.require.lib `type;
+.require.lib each `type`convert;
 
 
 / Value to check if the execution fails in .ns.protectedExecute
@@ -113,7 +113,7 @@
     argCheck:where not funcArgs in key args;
 
     if[0 < count argCheck;
-        '"MissingFunctionArgumentException (",.Q.s1[funcArgs argCheck],")";
+        '"MissingFunctionArgumentException (",.convert.listToString[funcArgs argCheck],")";
     ];
 
     :func . args funcArgs;   
