@@ -18,9 +18,9 @@
 
 / Provides current state of all connections that were initiated by an external process. This will
 / only be populated if .ipc.cfg.enableInboundConnTracking is enabled on library initialisation
-/  @see .ipc.i.connectionOpen
+/  @see .ipc.i.handleOpen
 /  @see .ipc.i.connectionClosed
-.ipc.inbound:`handle xkey flip `handle`sourceIp`user`connectTime!"ISSP"$\:();
+.ipc.inbound:`handle xkey flip `handle`sourceIp`user`connectTime`connectType!"ISSPS"$\:();
 
 / Provides current state of all outbound connections that are initiated using the functions within
 / this IPC library
@@ -96,19 +96,19 @@
 .ipc.disconnect:{[h]
     closeRes:@[hclose;h;{ (`FAILED_TO_CLOSE;x) }];
     
+    .ipc.i.connectionClosed h;
+    
     if[`FAILED_TO_CLOSE~first closeRes;
         .log.warn "Failed to close handle ",string[h],". Error - ",last closeRes;
         :0b;
     ];
 
-    .ipc.i.connectionClosed h;
-    
     :1b;
  };
 
 / Uses the event management library to track inbound connection open / close
 /  @see .event.addListener
-/  @see .ipc.i.connectionOpen
+/  @see .ipc.i.handleOpen
 /  @see .ipc.i.connectionClosed
 .ipc.i.enableInboundConnTracking:{
     .log.info "Enabling inbound connection tracking";
@@ -116,20 +116,32 @@
     / Optional dependency if inbound connection tracking required. Otherwise event is not loaded
     .require.lib`event;
 
-    .event.addListener[`port.open; `.ipc.i.connectionOpen];
+    .event.addListener[`port.open; `.ipc.i.handleOpen];
+    .event.addListener[`websocket.open; `.ipc.i.websocketOpen];
     .event.addListener[`port.close; `.ipc.i.connectionClosed];
+    .event.addListener[`websocket.close; `.ipc.i.connectionClosed];
  };
 
-/ Listener function when a connection is opened (via .z.po). Logs the new connection and adds it to .ipc.inbound
+/ @see .ipc.i.connectionOpen
+.ipc.i.handleOpen:{[h]
+    .ipc.i.connectionOpen[h;`kdb];
+ };
+
+/ @see .ipc.i.connectionOpen
+.ipc.i.websocketOpen:{[ws]
+    .ipc.i.connectionOpen[ws;`websocket];
+ };
+
+/ Hepler function when a connection is opened (via .z.po). Logs the new connection and adds it to .ipc.inbound
 /  @see .convert.ipOctalToSymbol
 /  @see .ipc.inbound
-.ipc.i.connectionOpen:{[h]
+.ipc.i.connectionOpen:{[h;connectType]
     sourceIp:.convert.ipOctalToSymbol .z.a;
     user:`unknown^.z.u;
 
-    .log.info "New inbound connection on handle ",string[h]," [ IP Address: ",string[sourceIp]," ] [ User: ",string[user]," ]";
+    .log.info "New inbound ",string[connectType]," connection on handle ",string[h]," [ IP Address: ",string[sourceIp]," ] [ User: ",string[user]," ]";
 
-    `.ipc.inbound upsert (h;sourceIp;user;.time.now[]);
+    `.ipc.inbound upsert (h;sourceIp;user;.time.now[];connectType);
  };
 
 / Logs and updates the .ipc.inbound and .ipc.outbound tables when a connection is closed

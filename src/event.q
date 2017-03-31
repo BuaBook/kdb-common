@@ -9,6 +9,8 @@
 .event.cfg.coreHandlers:()!();
 .event.cfg.coreHandlers[`port.open]:`.z.po;
 .event.cfg.coreHandlers[`port.close]:`.z.pc;
+.event.cfg.coreHandlers[`websocket.open]:`.z.wo;
+.event.cfg.coreHandlers[`websocket.close]:`.z.wc;
 .event.cfg.coreHandlers[`process.exit]:`.z.exit;
 
 / Allow the event system to add "process is exiting" logging when the process exits 
