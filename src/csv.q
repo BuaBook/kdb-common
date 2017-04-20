@@ -15,9 +15,9 @@
     '"IllegalArgumentException";
   ];
 
-  .log.info"Loading CSV file ",.type.hsymToString path;
+  .log.info"Loading CSV file ",.convert.hsymToString path;
 
-  :.csv.parse[types;read0 hpath];
+  :.csv.parse[types;read0 path];
  };
 
 / Parses CSV data based on the specified column types, ignoring empty lines
