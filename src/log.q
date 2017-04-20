@@ -51,7 +51,7 @@
     lvl:.log.color[lvl],string[lvl],.log.color.RESET;
   ];
 
-  fd ,[;message] " " sv .type.ensureString (.time.today[];.time.nowAsTime[];lvl;.log.process;`system^.z.u;.z.w;`);
+  fd ,[;message] " " sv .type.ensureString each (.time.today[];.time.nowAsTime[];lvl;.log.process;`system^.z.u;.z.w;`);
  };
 
 / Configures the logging functions based on the specified level. Any levels below the new level will
