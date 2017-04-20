@@ -216,7 +216,8 @@
         result:last result;
     ];
 
-    if[.cron.cfg.logStatus;
+    / Cron job failures will always be logged
+    if[.cron.cfg.logStatus | not status;
         `.cron.status upsert jobId,(jobDetails`func`nextRunTime),(startTimer;endTimer - startTimer;status;enlist result);
     ];
 
