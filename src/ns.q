@@ -84,6 +84,10 @@
 /  @param args () The arguments to pass to the function. Pass generic null (::) if function requires no arguments
 /  @returns () The results of the function or a list (`PROT_EXEC_FAILED;theError) if it fails
 .ns.protectedExecute:{[func;args]
+    if[not .type.isSymbol func;
+        '"IllegalArgumentException";
+    ];
+    
     funcArgCount:count .ns.getFunctionArguments func;
 
     if[1 = funcArgCount;
