@@ -54,7 +54,7 @@
  };
 
 .os.w.rmF:{
-    :"del /F ",.os.i.convertPathForWindows x;
+    :"del /F /Q ",.os.i.convertPathForWindows x;
  };
 
 
