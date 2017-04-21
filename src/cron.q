@@ -90,7 +90,7 @@
         '"InvalidCronRunTypeException";
     ];
 
-    if[startTime < .time.now[];
+    if[startTime < .time.today[]+`second$.time.nowAsTime[];
         .log.error "Cron job start time is in the past. Cannot add job";
         '"InvalidCronJobTimeException";
     ];
