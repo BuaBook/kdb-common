@@ -154,9 +154,11 @@
     update nextRunTime:0Wp from `.cron.jobs where id = jobId;
  };
 
-/ Removes all entries from .cron.status. By default this is run at midnight every day
+/ Removes all entries from .cron.status and all jobs that will not run again. By default this is run at
+/ midnight every day
 /  @see .cron.status
 .cron.cleanStatus:{
+    delete from `.cron.jobs where nextRunTime = 0Wp;
     delete from `.cron.status;
  };
 
