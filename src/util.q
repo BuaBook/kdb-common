@@ -67,10 +67,8 @@
     if[.util.isEmpty enumCols;
         :t;
     ];
-
-    nonEnumCols:cols[t] except enumCols;
-
-    :cols[t] xcols (nonEnumCols#t),'flip enumCols!get each t@/:enumCols;
+    
+    :@[t;enumCols;get];
  };
 
 / Renames columns in the specified table
