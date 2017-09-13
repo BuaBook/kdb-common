@@ -45,7 +45,7 @@
         '"IllegalArgumentException";
     ];
 
-    .ipc.connect `$":",string[host],":",string port;
+    :.ipc.connect `$":",string[host],":",string port;
  };
 
 / Open a connection to the specified target host/port using the default connection timeout
