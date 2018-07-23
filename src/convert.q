@@ -46,3 +46,8 @@
     :", " sv .type.ensureString list;
  };
 
+/ A more general version of '.convert.listToString' to ensure all elements of the specified list are string-ed
+/  @returns (String) The specified list as a single string. NOTE: There is no separator between list elements
+.convert.genericListToString:{[list]
+    :raze .type.ensureString@/:list;
+ };
