@@ -1,11 +1,11 @@
 // Utility Functions
-// Copyright (c) 2014 - 2017 Sport Trades Ltd
+// Copyright (c) 2014 - 2018 Sport Trades Ltd
 
 .require.lib `type;
 
 
 / We define the use of the system command argument "-e" to also define if the
-/ process is started in debug mode or not. For kdb >= 3.5, only -1 now means
+/ process is started in debug mode or not. For kdb >= 3.5, only 1 now means
 / debug mode
 /  @returns (Boolean) If the current process is in debug mode or not
 .util.inDebugMode:{ :1i = system "e" };
