@@ -5,9 +5,10 @@
 
 
 / We define the use of the system command argument "-e" to also define if the
-/ process is started in debug mode or not
+/ process is started in debug mode or not. For kdb >= 3.5, only -1 now means
+/ debug mode
 /  @returns (Boolean) If the current process is in debug mode or not
-.util.inDebugMode:{ `boolean$system"e" };
+.util.inDebugMode:{ :1i = system "e" };
 
 /  @returns (Boolean) True if the process is bound to a port, false if not
 .util.isListening:{ `boolean$system"p" };
@@ -15,7 +16,7 @@
 / Simple wrapper around the system command. Throws an exception if the command fails
 /  @throws SystemCallFailedException If the system command does not complete successfully
 .util.system:{[cmd]
-  .log.info "Running system command: \"",cmd,"\"";
+  .log.debug "Running system command: \"",cmd,"\"";
   @[system;cmd;{.log.error "System call failed: ",x; '"SystemCallFailedException"}]
  };
 
@@ -123,4 +124,42 @@ k).util.showNoLimit:{
     tabs:raze tabCount#enlist "\t";
 
     :tabs,("\r\n",tabs) sv "\r\n" vs x;
+ };
+
+/ NOTE: This function only works for in-memory tables in the root namespace
+/  @param tbls (SymbolList) Optional parameter. If specified, will return row counts only for specified tables
+/  @returns (Dict) Root namespace tables and the count of each of them
+.util.getTableCounts:{[tbls]
+    $[.util.isEmpty tbls;
+        tbls:tables[];
+        tbls:tables[] inter (),tbls
+    ];
+
+    :tbls!count each get each tbls;
+ }; 
+
+/ Removes all data from the specified root namespace table
+/  @param x (Symbol) The table to clear
+/  @throws InvalidTableException If the table does not exist in the root namespace
+.util.clearTable:{
+    if[not x in tables[];
+        '"InvalidTableException";
+    ];
+
+    set[x; 0#get x];
+ };
+
+/  @param x (List) A list to check if all values are unique
+/  @returns (Boolean) True if the specified list has only unique values
+.util.isDistinct:{
+    :x~distinct x;
+ };
+ 
+/ String find and replace. If multiple 'find' arguments are supplied the equivalent number of
+/ replace arguments must also be specified
+/  @param startString (String) The string to find and replace within
+/  @param find (String|StringList) The string or strings to find
+/  @param replace (String|StringList) The string or strings to replace with
+.util.findAndReplace:{[startString;find;replace]
+    :(ssr/)[startString; find; replace];
  };
