@@ -7,6 +7,8 @@
 
 // We default to assuming GMT times
 
+.require.lib`type;
+
 
 / @returns (Timestamp) The current date and time to nanosecond precision
 .time.now:{ .z.p };
