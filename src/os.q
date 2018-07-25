@@ -1,5 +1,5 @@
 // Operating System Specific Functionality
-// Copyright (c) 2017 Sport Trades Ltd
+// Copyright (c) 2017 - 2018 Sport Trades Ltd
 
 .require.lib each `util`type;
 
@@ -35,6 +35,17 @@
     :key 1_ .os .os.type;
  };
 
+/  @returns (Boolean) True if the PID is valid and a process exists on the current server that matches it. Otherwise returns false
+.os.isProcessAlive:{[pid]
+    osCheck:first .os.run[`pidCheck; string pid];
+
+    if[`w=.os.type;
+        :osCheck like "*",string[pid],"*";
+    ];
+
+    :not "B"$osCheck;
+ };
+
 // Windows Implementation
 
 .os.w.mkdir:{
@@ -57,6 +68,70 @@
     :"del /F /Q ",.os.i.convertPathForWindows x;
  };
 
+.os.w.pidCheck:{
+    :"tasklist /FI \"PID eq ",x,"\" /FO CSV /NH";
+ };
+
+.os.w.sigterm:{
+    :"taskkill /PID ",x;
+ };
+
+.os.w.sigkill:{
+    :"taskkill /PID ",x," /F";
+ };
+
+.os.w.sleep:{
+    :"timeout /t ",x," /nobreak >nul";
+ };
+ 
+/ ln requires 2 arguments so pass string separated by "|"
+/ First argument should be the target, 2nd argument should be the source
+.os.w.ln:{
+    args:"|" vs x;
+    :"mklink ",.os.i.convertPathForWindows[args 0]," ",.os.i.convertPathForWindows args 1;
+ };
+
+/ mv requires 2 arguments so pass string separated by "|"
+/ First argument should be the source, 2nd argument should be the target
+.os.w.mv:{
+    args:"|" vs x;
+    :"move ",.os.i.convertPathForWindows[args 0]," ",.os.i.convertPathForWindows args 1;
+ };
+
+.os.w.rmFolder:{
+    :"rd /S /Q ",.os.i.convertPathForWindows x;
+ };
+
+.os.w.rmFolder:{
+    :"rd /S /Q ",.os.i.convertPathForWindows x;
+ };
+
+.os.w.tail:{
+    :"type ",.os.i.convertPathForWindows x;
+ };
+
+.os.w.safeRmFolder:{
+    :"rmdir ",.os.i.convertPathForWindows x;
+ };
+
+.os.w.procCount:{
+    :"echo %NUMBER_OF_PROCESSORS%";
+ };
+
+.os.w.which:{
+    :"where ",x;
+ };
+
+.os.w.ver:{
+    :"ver";
+ };
+
+/ cp requires 2 arguments so pass string separated by "|"
+/ First argument should be the source, 2nd argument should be the target
+.os.w.cpFolder:{
+    args:"|" vs x;
+    :"xcopy /e /y ",.os.i.convertPathForWindows[args 0]," ",.os.i.convertPathForWindows args 1;
+ };
 
 // Linux Implementation
 
@@ -87,4 +162,73 @@
 
 .os.i.convertPathForWindows:{[path]
     :ssr[path;"/";"\\"];
+ };
+
+.os.l.pidCheck:{
+    :"kill -n 0 ",x," 2>/dev/null; echo $?";
+ };
+
+.os.l.sigint:{
+    :"kill -s INT ",x;
+ };
+
+.os.l.sigterm:{
+    :"kill -s TERM ",x;
+ };
+
+.os.l.sigkill:{
+    :"kill -s KILL ",x;
+ };
+
+.os.l.sleep:{
+    :"sleep ",x;
+ };
+
+/ ln requires 2 arguments so pass string separated by "|"
+/ First argument should be the target, 2nd argument should be the source
+.os.l.ln:{
+    args:"|" vs x;
+    :"ln -s ",args[1]," ",args 0;
+ };
+
+/ mv requires 2 arguments so pass string separated by "|"
+/ First argument should be the source, 2nd argument should be the target
+.os.l.mv:{
+    args:"|" vs x;
+    :"mv ",args[0]," ",args 1;
+ };
+
+.os.l.rmFolder:{
+    :"rm -rvf ",x;
+ };
+
+.os.l.tail:{
+    :"tail -n 30 ",x;
+ };
+
+.os.l.safeRmFolder:{
+    :"rmdir ",x;
+ };
+
+.os.l.procCount:{
+    :"getconf  _NPROCESSORS_ONLN";
+ };
+
+.os.l.which:{
+    :"which ",x;
+ };
+
+.os.l.ver:{
+    :"cat /etc/system-release";
+ };
+
+.os.l.cpuAssign:{
+    :"taskset -cp ",x;
+ };
+
+/ cp requires 2 arguments so pass string separated by "|"
+/ First argument should be the source, 2nd argument should be the target
+.os.l.cpFolder:{
+    args:"|" vs x;
+    :"cp -rv ",args[0]," ",args 1;
  };
