@@ -154,16 +154,7 @@
 .os.l.rmF:{
     :"rm -vf ",x;
  };
-
-
-.os.i.getOsType:{
-    :`$first string .z.o;
- };
-
-.os.i.convertPathForWindows:{[path]
-    :ssr[path;"/";"\\"];
- };
-
+ 
 .os.l.pidCheck:{
     :"kill -n 0 ",x," 2>/dev/null; echo $?";
  };
@@ -231,4 +222,13 @@
 .os.l.cpFolder:{
     args:"|" vs x;
     :"cp -rv ",args[0]," ",args 1;
+ };
+
+
+.os.i.getOsType:{
+    :`$first string .z.o;
+ };
+
+.os.i.convertPathForWindows:{[path]
+    :ssr[path;"/";"\\"];
  };
