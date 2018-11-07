@@ -174,7 +174,7 @@
 .cron.i.runOnce:{[jobId]
     status:.cron.i.run jobId;
 
-    update nextRunTime:0Wp from `.cron.jobs where id = jobId;
+    .cron.cancelJob jobId;
 
     :status;
  };
@@ -187,10 +187,16 @@
 
     jobDetails:.cron.jobs jobId;
 
+    if[.type.isInfinite jobDetails`nextRunTime;
+        .log.debug "Job has been self-cancelled. Will not reschedule [ Job: ",string[jobId]," ]";
+        :status;
+    ];
+
     newNextRunTime:(+). jobDetails`nextRunTime`interval;
 
     $[newNextRunTime > jobDetails`endTime;
         update nextRunTime:0Wp from `.cron.jobs where id = jobId;
+    / else
         update nextRunTime:newNextRunTime from `.cron.jobs where id = jobId
     ];
 
