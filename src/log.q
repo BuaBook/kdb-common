@@ -4,7 +4,7 @@
 .require.lib each `util`type`time;
 
 
-/ The maximum level to log at. The logging order is DEBUG, INFO, WARN, ERROR, FATAL.
+/ The maximum level to log at. The logging order is TRACE, DEBUG, INFO, WARN, ERROR, FATAL.
 .log.level:`INFO;
 
 / Configuration to determine if colors should be output. Colors can be enabled by either
@@ -12,7 +12,8 @@
 / the process
 .log.logColors:0b;
 
-/ Supported log levels and their output
+/ Supported log levels and their output. The order of this dictionary implies the logging order (e.g. a log level
+/ of ERROR will log ERROR and FATAL)
 .log.levels:`TRACE`DEBUG`INFO`WARN`ERROR`FATAL!neg 1 1 1 1 2 2;
 
 / Color configuration
@@ -74,4 +75,16 @@
     -1 "\nLogging enabled [ Level: ",string[newLevel]," ]\n";
 
     .log.level:newLevel;
+ };
+
+/ Provides a way to know which log levels are currently being logged. For example, if the log level is currently INFO
+/ .log.isLoggingAt will return true for all of INFO, WARN, ERROR, FATAL and false for DEBUG, TRACE.
+/  @param level (Symbol) The logging level to check is currently being logged
+/  @returns (Boolean) True if the specified level is currently being logged by this library. False otherwise
+.log.isLoggingAt:{[level]
+    if[not level in key .log.levels;
+        '"IllegalArgumentException";
+    ];
+
+    :(<=). key[.log.levels]?/: .log.level,level;
  };
