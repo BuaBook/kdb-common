@@ -46,6 +46,16 @@
     :not "B"$osCheck;
  };
 
+
+.os.i.getOsType:{
+    :`$first string .z.o;
+ };
+
+.os.i.convertPathForWindows:{[path]
+    :ssr[path;"/";"\\"];
+ };
+
+
 // Windows Implementation
 
 .os.w.mkdir:{
@@ -222,13 +232,4 @@
 .os.l.cpFolder:{
     args:"|" vs x;
     :"cp -rv ",args[0]," ",args 1;
- };
-
-
-.os.i.getOsType:{
-    :`$first string .z.o;
- };
-
-.os.i.convertPathForWindows:{[path]
-    :ssr[path;"/";"\\"];
  };
