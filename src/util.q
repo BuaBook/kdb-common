@@ -1,7 +1,7 @@
 // Utility Functions
 // Copyright (c) 2014 - 2018 Sport Trades Ltd
 
-.require.lib `type;
+.require.lib each `type`time;
 
 
 / We define the use of the system command argument "-e" to also define if the
@@ -162,4 +162,27 @@ k).util.showNoLimit:{
 /  @param replace (String|StringList) The string or strings to replace with
 .util.findAndReplace:{[startString;find;replace]
     :(ssr/)[startString; find; replace];
+ };
+
+/ Garbage collection via .Q.gc with timing and logging with regard to the amount of memory to returned to the OS
+/  @returns (Dict) The difference in memory values (from .Q.w) before and after the garbage collection
+/  @see .Q.w
+/  @see .Q.gc
+.util.gc:{
+    beforeStats:.Q.w[];
+    gcStartTime:.time.now[];
+
+    .log.info "Running garbage collection";
+
+    .Q.gc[];
+
+    diffStats:beforeStats - .Q.w[];
+
+    $[0f = diffStats`heap;
+        .log.info "Garbage collection complete. No memory returned to OS";
+    / else
+        .log.info "Garbage collection complete [ Returned to OS (from heap): ",string[.util.round[2;] %[;1024*1024] diffStats`heap]," MB ] [ Time: ",string[.time.now[] - gcStartTime]," ]"
+    ];
+
+    :diffStats;
  };
