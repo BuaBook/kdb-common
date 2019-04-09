@@ -124,7 +124,9 @@
 
 / @see .ipc.i.connectionOpen
 .ipc.i.handleOpen:{[h]
-    .ipc.i.connectionOpen[h;`kdb];
+    connectType:` sv `kdb,`tcp`uds 0i = .z.a;
+
+    .ipc.i.connectionOpen[h;connectType];
  };
 
 / @see .ipc.i.connectionOpen
