@@ -1,7 +1,7 @@
 // E-mail Sending via mailx
 // Copyright (c) 2016 Sport Trades Ltd
 
-.require.lib each `util`os`convert;
+.require.lib each `util`os`convert`ns;
 
 
 / The required arguments in order to send an e-mail
