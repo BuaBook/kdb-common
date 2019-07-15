@@ -4,26 +4,38 @@
 .require.lib each `util`type`time;
 
 
+/ Functions to determine which logger to use. The dictionary key is a symbol reference to the logger function if the
+/ value function is true.
+/ NOTE: .log.loggers.basic should always be last so it is the fallback if all others are not available
+.log.cfg.loggers:()!();
+.log.cfg.loggers[`.log.loggers.color]: { (not ""~getenv`KDB_COLORS) | `logColors in key .Q.opt .z.x };
+.log.cfg.loggers[`.log.loggers.syslog]:{ (not ""~getenv`KDB_LOG_SYSLOG) | `logSyslog in key .Q.opt .z.x };
+.log.cfg.loggers[`.log.loggers.basic]: { 1b };
+
+
 / The maximum level to log at. The logging order is TRACE, DEBUG, INFO, WARN, ERROR, FATAL.
 .log.level:`INFO;
 
-/ Configuration to determine if colors should be output. Colors can be enabled by either
-/ setting the environment variable KDB_COLORS or passing "-logColors" as an argument to 
-/ the process
-.log.logColors:0b;
+/ The current logger that is in use
+/  @see .log.setLogger
+.log.currentLogger:`;
 
-/ Supported log levels and their output. The order of this dictionary implies the logging order (e.g. a log level
+/ Constant string to reset the color back to default after logging some color
+.log.resetColor:"\033[0m";
+
+/ Supported log levels and their related configuration. The order of the table implies the logging order (.e.g a log
+/ level of ERROR will log ERROR and FATAL only). The information stored in this table:
+/  - fd: The file descriptor to output that log level to
+/  - syslog: The equivalent syslog log priority (for use with systemd logging). See 'man syslog'
+/  - color: The colors to use for each log level. Empty string means no coloring
 / of ERROR will log ERROR and FATAL)
-.log.levels:`TRACE`DEBUG`INFO`WARN`ERROR`FATAL!neg 1 1 1 1 2 2;
-
-/ Color configuration
-.log.color.RESET:"\033[0m";
-.log.color.TRACE:.log.color.RESET;
-.log.color.DEBUG:.log.color.RESET;
-.log.color.INFO:.log.color.RESET;
-.log.color.WARN:"\033[1;33m";
-.log.color.ERROR:"\033[1;31m";
-.log.color.FATAL:"\033[4;31m";
+.log.levels:`level xkey flip `level`fd`syslog`color!"SII*"$\:();
+.log.levels[`TRACE]:(-1i; 7i; "");
+.log.levels[`DEBUG]:(-1i; 7i; "");
+.log.levels[`INFO]: (-1i; 6i; "");
+.log.levels[`WARN]: (-1i; 4i; "\033[1;33m");
+.log.levels[`ERROR]:(-2i; 3i; "\033[1;31m");
+.log.levels[`FATAL]:(-2i; 2i; "\033[4;31m");
 
 / Process identification
 /  @see .log.init
@@ -35,27 +47,31 @@
         .log.level:`DEBUG;
     ];
 
-    if[(not ""~getenv`KDB_COLORS) | `logColors in key .Q.opt .z.x;
-        .log.logColors:1b;
-    ];
-
+    .log.setLogger[];
     .log.setLevel .log.level;
+
     .log.process:`$"pid-",string .z.i;
  };
 
-/ The log function
-/  @param fd (Integer) The file descriptor to print to
+
+/ Empty function defining the message logging function interface
+/  @param fd (Integer) The file description to log to
 /  @param lvl (Symbol) The level that is being logged
 /  @param message (String) The message to log
-.log.msg:{[fd;lvl;message]
-  if[.log.logColors;
-    lvl:.log.color[lvl],string[lvl],.log.color.RESET;
-  ];
+/  @see .log.setLogger
+.log.msg:{[fd; lvl; message] };
 
-  logElems:(.time.today[];.time.nowAsTime[];lvl;.log.process;`system^.z.u;.z.w;message);
-  logElems:@[logElems; where not .type.isString each logElems; string];
 
-  fd " " sv logElems;
+/ Sets the current logger based on the result of the functions defined in .log.cfg.loggers. The first function in the
+/ dictionary will be used as the current logger (set in .log.msg)
+/  @see .log.cfg.loggers
+/  @see .log.currentLogger
+/  @see .log.msg
+.log.setLogger:{
+    logger:first where .log.cfg.loggers@\:(::);
+
+    .log.currentLogger:logger;
+    set[`.log.msg; get logger];
  };
 
 / Configures the logging functions based on the specified level. Any levels below the new level will
@@ -69,15 +85,15 @@
 
     logLevel:key[.log.levels]?newLevel;
 
-    enabled:logLevel _ .log.levels;
-    disabled:logLevel # .log.levels;
+    enabled:0!logLevel _ .log.levels;
+    disabled:0!logLevel # .log.levels;
 
-    @[`.log;lower key enabled;:;.log.msg .'flip(get;key)@\:enabled];
-    @[`.log;lower key disabled;:;count[disabled]#(::)];
-
-    -1 "\nLogging enabled [ Level: ",string[newLevel]," ]\n";
+    @[`.log; lower enabled`level ; :; .log.msg ./: flip (0!enabled)`fd`level];
+    @[`.log; lower disabled`level; :; count[disabled]#(::)];
 
     .log.level:newLevel;
+
+    -1 "\nLogging enabled [ Level: ",string[.log.level]," ] [ Current Logger: `",string[.log.currentLogger]," ]\n";
  };
 
 / Provides a way to know which log levels are currently being logged. For example, if the log level is currently INFO
@@ -90,4 +106,36 @@
     ];
 
     :(<=). key[.log.levels]?/: .log.level,level;
+ };
+
+
+/ Basic logger
+.log.loggers.basic:{[fd;lvl;message]
+    logElems:(.time.today[];.time.nowAsTime[];lvl;.log.process;`system^.z.u;.z.w;message);
+    logElems:@[logElems; where not .type.isString each logElems; string];
+
+    fd " " sv logElems;
+ };
+
+/ Logger with color highlighting of the level based on the configuration in .log.levels
+/  @see .log.levels
+/  @see .log.resetColor
+/  @see .log.loggers.basic
+.log.loggers.color:{[fd;lvl;message]
+    lvl:(.log.levels[lvl]`color),string[lvl],.log.resetColor;
+
+    .log.loggers.basic[fd; lvl; message];
+ };
+
+/ Non-color logger with the additional syslog priority prefix at the start of the log line. This is useful
+/ when capturing log output into systemd (via 'systemd-cat').
+/ NOTE: This function does not defer to '.log.loggers.basic' for logging
+/  @see .log.levels
+.log.loggers.syslog:{[fd;lvl;message]
+    syslogLvl:"<",string[.log.levels[lvl]`syslog],">";
+
+    logElems:(syslogLvl;.time.today[];.time.nowAsTime[];lvl;.log.process;`system^.z.u;.z.w;message);
+    logElems:@[logElems; where not .type.isString each logElems; string];
+
+    fd " " sv logElems;
  };
