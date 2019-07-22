@@ -15,6 +15,10 @@
 /  @see .ipc.i.enableInboundConnTracking
 .ipc.cfg.enableInboundConnTracking:1b;
 
+/ Whether a connection password, if specified, should be logged. If false, the password will be replaced
+/ for logging with asterisks. If true, the plain-text password will be logged
+.ipc.cfg.logPasswordsDuringConnect:0b;
+
 
 / Provides current state of all connections that were initiated by an external process. This will
 / only be populated if .ipc.cfg.enableInboundConnTracking is enabled on library initialisation
@@ -56,14 +60,16 @@
     :.ipc.connectWithTimeout[hostPort;::];
  };
 
-/ Open a connection to the specified target host/port with a maximum timeout period
+/ Open a connection to the specified target host/port with a maximum timeout period.
+/ NOTE: Passwords can be configured to not be printed to via logging. However, the password will always be present
+/ in .ipc.outbound
 /  @param hostPort (HostPort) The target process to connect to
 /  @param timeout (Integer) The maximum time to wait for a connection. Pass generic null to use the default
 /  @return (Integer) The handle to that process if the connection is successful
 /  @throws IllegalArgumentException If the host/port is not of the correct type
 /  @throws ConnectionFailedException If the connection to the process fails
 /  @see .ipc.cfg.defaultConnectTimeout
-/  @see .q.hopen
+/  @see .ipc.cfg.logPasswordsDuringConnect
 .ipc.connectWithTimeout:{[hostPort;timeout]
     if[not .type.isHostPort hostPort;
         '"IllegalArgumentException";
@@ -73,18 +79,29 @@
         timeout:.ipc.cfg.defaultConnectTimeout;
     ];
 
-    .log.info "Attempting to connect to ",string[hostPort]," (timeout ",string[timeout]," ms)";
+    logHostPort:string .type.ensureHostPortSymbol hostPort;
+
+    if[not .ipc.cfg.logPasswordsDuringConnect;
+        if[4 = count where ":" = string hostPort;
+            hpSplit:":" vs string hostPort;
+            hpSplit:@[hpSplit; 4; :; count[hpSplit 4]#"*"];
+
+            logHostPort:":" sv hpSplit;
+        ];
+    ];
+
+    .log.info "Attempting to connect to ",logHostPort," (timeout ",string[timeout]," ms)";
 
     h:@[hopen;hostPort;{ (`CONN_FAIL;x) }];
 
     if[`CONN_FAIL~first h;
-        .log.error "Failed to connect to ",string[hostPort],". Error - ",last h;
-        '"ConnectionFailedException (",string[hostPort],")";
+        .log.error "Failed to connect to ",logHostPort,". Error - ",last h;
+        '"ConnectionFailedException (",logHostPort,")";
     ];
 
-    .log.info "Successfully connected to ",string[hostPort]," on handle ",string h;
+    .log.info "Successfully connected to ",logHostPort," on handle ",string h;
 
-    `.ipc.outbound upsert (h;.type.ensureHostPortSymbol hostPort;.time.now[]);
+    `.ipc.outbound upsert (h; .type.ensureHostPortSymbol hostPort; .time.now[]);
 
     :h;
   };
