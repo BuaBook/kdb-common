@@ -10,6 +10,7 @@
 .log.cfg.loggers:()!();
 .log.cfg.loggers[`.log.loggers.color]: { (not ""~getenv`KDB_COLORS) | `logColors in key .Q.opt .z.x };
 .log.cfg.loggers[`.log.loggers.syslog]:{ (not ""~getenv`KDB_LOG_SYSLOG) | `logSyslog in key .Q.opt .z.x };
+.log.cfg.loggers[`.log.loggers.json]:  { (not ""~getenv`KDB_LOG_JSON) | `logJson in key .Q.opt .z.x };
 .log.cfg.loggers[`.log.loggers.basic]: { 1b };
 
 
@@ -47,8 +48,8 @@
         .log.level:`DEBUG;
     ];
 
+    / setLogger calls setLevel
     .log.setLogger[];
-    .log.setLevel .log.level;
 
     .log.process:`$"pid-",string .z.i;
  };
@@ -67,11 +68,14 @@
 /  @see .log.cfg.loggers
 /  @see .log.currentLogger
 /  @see .log.msg
+/  @see .log.setLevel
 .log.setLogger:{
     logger:first where .log.cfg.loggers@\:(::);
 
     .log.currentLogger:logger;
     set[`.log.msg; get logger];
+
+    .log.setLevel .log.level;
  };
 
 / Configures the logging functions based on the specified level. Any levels below the new level will
@@ -138,4 +142,10 @@
     logElems:@[logElems; where not .type.isString each logElems; string];
 
     fd " " sv logElems;
+ };
+
+/ JSON logger
+.log.loggers.json:{[fd;lvl;message]
+    logElems:`date`time`level`processId`user`handle`message!(.time.today[];.time.nowAsTime[];lvl;.log.process;`system^.z.u;.z.w;message);
+    fd .j.j logElems;
  };
