@@ -109,6 +109,10 @@
     :(~). 1#/:(.q;x);
  };
 
+.type.isAtom:{
+    :type[x] within -19 -1h;
+ };
+
 .type.isList:{
     :type[x] within 0 19h;
  };
