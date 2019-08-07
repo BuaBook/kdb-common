@@ -1,19 +1,27 @@
 // Timezone Conversion Library
 // Copyright (c) 2019 Sport Trades Ltd
 
+// INFO: This library is a implementation of the code described at https://code.kx.com/v2/kb/timezones/
+
+
 .require.lib each `csv`type;
 
-// This library is a implementation of the code described at http://code.kx.com/q/cookbook/timezones
 
+/ The expected file name containing the timezone configuration
 .tz.cfg.csvFilename:`$"timezone-config.csv";
 
+/ The expected column types of the timezone configuration
 .tz.cfg.csvTypes:"SPJJ";
 
+/ Optional path containing the timezone configuration. If this is not set, the init function will default to:
+/  `:require-root/config/timezone
 .tz.cfg.csvPath:`;
 
 
+/ The discovered file path of the timezone configuration file
 .tz.csvSrcPath:`;
 
+/ The timezone configuration as a kdb table
 .tz.timezones:();
 
 
@@ -38,10 +46,16 @@
  };
 
 
+/  @returns (Symbol) All the supported timezones for conversion
 .tz.getSupportedTimezones:{
     :distinct .tz.timezones`timezoneID;
  };
 
+/ Converts a timestamp in UTC into the specified target timezone
+/  @param timestamp (Timestamp|TimestampList) The timestamps to convert
+/  @param targetTimezone (Symbol) The timezone to convert to
+/  @throws InvalidTargetTimezoneException If the timezone specified is not present in the configuration
+/  @see .tz.timezones
 .tz.utcToTimezone:{[timestamp; targetTimezone]
     if[not targetTimezone in .tz.timezones`timezoneID;
         '"InvalidTargetTimezoneException";
@@ -53,6 +67,11 @@
     :convertRes exec gmtDateTime + adjustment from aj[`timezoneID`gmtDateTime; convertTable; .tz.timezones];
  };
 
+/ Converts a timestamp in the specified timezone into the UTC timezone
+/  @param timestamp (Timestamp|TimestampList) The timestamps to convert
+/  @param sourceTimezone (Symbol) The timezone that the specified timestamps are currently in
+/  @throws InvalidSourceTimezoneException If the timezone specified is not present in the configuration
+/  @see .tz.timezones
 .tz.timezoneToUtc:{[timestamp; sourceTimezone]
     if[not sourceTimezone in .tz.timezones`timezoneID;
         '"InvalidSourceTimezoneException";
@@ -64,6 +83,16 @@
     :convertRes exec localDateTime - adjustment from aj[`timezoneID`localDateTime; convertTable; .tz.timezones];
  };
 
+/ Converts a timestamp in the specified timezone into another specified timezone
+/ NOTE: This conversion is done via UTC so will be slower than converting to/from UTC
+/  @param timestamp (Timestamp|TimestampList) The timestamps to convert
+/  @param sourceTimezone (Symbol) The timezone that the specified timestamps are currently in
+/  @param targetTimezone (Symbol) The timezone to convert to
+/  @throws InvalidSourceTimezoneException If the timezone specified is not present in the configuration
+/  @throws InvalidTargetTimezoneException If the timezone specified is not present in the configuration
+/  @see .tz.timezones
+/  @see .tz.utcToTimezone
+/  @see .tz.timezoneToUtc
 .tz.timezoneToTimezone:{[timestamp; sourceTimezone; targetTimezone]
     if[not sourceTimezone in .tz.timezones`timezoneID;
         '"InvalidSourceTimezoneException";
@@ -77,6 +106,10 @@
  };
 
 
+/ Loads the timezone CSV file into memory
+/  @see .tz.cfg.csvTypes
+/  @see .tz.csvSrcPath
+/  @see .tz.timezones
 .tz.i.loadTimezoneCsv:{
     timezones:.csv.load[.tz.cfg.csvTypes; .tz.csvSrcPath];
     timezones:update gmtOffset:.convert.msToTimespan 1000*gmtOffset, dstOffset:.convert.msToTimespan 1000*dstOffset from timezones;
