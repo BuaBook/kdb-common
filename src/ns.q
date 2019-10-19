@@ -1,12 +1,25 @@
 // Namespace Management Functions
-// Copyright (c) 2016 - 2017 Sport Trades Ltd
+// Copyright (c) 2016 - 2019 Sport Trades Ltd
 
 .require.lib each `type`convert;
+
+
+/ Configures the protected execution mode within '.ns.protectedExecute'. This is enabled, if supported, during library
+/ initialisation. Options:
+/  1b:  Uses -105! (.Q.trp) to provide an error stack alongside the exception (only available with kdb+ >= 3.5)
+/  0b:  Uses '@' to provide legacy protected execution, returning just the exception (available with all kdb+ versions)
+.ns.cfg.protectExecWithStack:0b;
 
 
 / Value to check if the execution fails in .ns.protectedExecute
 /  @see .ns.protectedExecute
 .ns.const.pExecFailure:`PROT_EXEC_FAILED;
+
+
+.ns.init:{
+    .ns.cfg.protectExecWithStack:3.5 <= .z.K;
+ };
+
 
 / Gets the contents of the specified namespace and returns them fully qualified
 /  @param ns (Symbol) The namespace to get the contents of
@@ -82,19 +95,26 @@
 / expected by the function to execute and then uses protected execution (try/catch) to run it
 /  @param func (Symbol) The function to execute
 /  @param args () The arguments to pass to the function. Pass generic null (::) if function requires no arguments
-/  @returns () The results of the function or a list (`PROT_EXEC_FAILED;theError) if it fails
+/  @returns () The results of the function or a dictionary `isError`errorMsg!(`PROT_EXEC_FAILED; theError) if it fails. If running with '.ns.cfg.protectExecWithStack' enabled, `backtrace will also be added as the 2nd element
+/  @see .ns.cfg.protectExecWithStack
 .ns.protectedExecute:{[func;args]
     if[not .type.isSymbol func;
         '"IllegalArgumentException";
     ];
     
+    / Checks for function existance
     funcArgCount:count .ns.getFunctionArguments func;
 
     if[1 = funcArgCount;
         args:enlist args;
     ];
 
-    :.[get func; args; { (.ns.const.pExecFailure;x) }];
+    / Can't use .Q.trp directly (for multi-argument functions)
+    $[.ns.cfg.protectExecWithStack;
+        :-105!(get func; args; { `isError`backtrace`errorMsg!(.ns.const.pExecFailure; .Q.sbt y; x) });
+    / else
+        :.[get func; args; { `isError`errorMsg!(.ns.const.pExecFailure; x) }]
+    ];
  };
 
 / Allows a function to be executed with a dictionary of arguments mapping back to the original arguments required
