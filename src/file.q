@@ -89,3 +89,19 @@
 .file.getCwd:{
     :hsym `$first .os.run[`pwd;::];
  };
+
+/  @returns (Boolean) True is the specified file is compressed, false otherwise
+/  @throws IllegalArgumentException If the specified parameter is not a file path
+.file.isCompressed:{[filePath]
+    if[not .type.isFilePath filePath;
+        '"IllegalArgumentException";
+    ];
+
+    compStatus:-21!filePath;
+
+    $[not `algorithm in key compStatus;
+        :0b;
+    / else
+        :0 < compStatus`algorithm
+    ];
+ };
