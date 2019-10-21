@@ -1,6 +1,8 @@
 // Operating System Specific Functionality
 // Copyright (c) 2017 - 2018 Sport Trades Ltd
 
+// Documentation: https://github.com/BuaBook/kdb-common/wiki/os.q
+
 .require.lib each `util`type;
 
 / The current operating system, independent of architecture

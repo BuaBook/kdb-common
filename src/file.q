@@ -1,6 +1,8 @@
 // File Manipulation Functions
 // Copyright (c) 2015 - 2017 Sport Trades Ltd
 
+// Documentation: https://github.com/BuaBook/kdb-common/wiki/file.q
+
 .require.lib each `util`type`convert`os;
 
 

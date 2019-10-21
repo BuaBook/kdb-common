@@ -1,6 +1,7 @@
 // Code Loading Library
 // Copyright (c) 2016 - 2017 Sport Trades Ltd
 
+// Documentation: https://github.com/BuaBook/kdb-common/wiki/require.q
 
 / The file suffixes that are supported for a library
 .require.fileSuffixes:(".q";".k";".*.q";".*.k";".q_";".*.q_");

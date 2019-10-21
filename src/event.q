@@ -1,6 +1,8 @@
 // Internal Event Management
 // Copyright (c) 2017 Sport Trades Ltd
 
+// Documentation: https://github.com/BuaBook/kdb-common/wiki/event.q
+
 .require.lib each `ns`time`convert;
 
 / Event names and functions to bind to. These "core" handlers are specified on initialisation

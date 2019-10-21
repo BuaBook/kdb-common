@@ -1,6 +1,8 @@
 // E-mail Sending via mailx
 // Copyright (c) 2016 Sport Trades Ltd
 
+// Documentation: https://github.com/BuaBook/kdb-common/wiki/mail.q
+
 .require.lib each `util`os`convert`ns;
 
 

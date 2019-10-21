@@ -1,6 +1,8 @@
 // Utility Functions
 // Copyright (c) 2014 - 2018 Sport Trades Ltd
 
+// Documentation: https://github.com/BuaBook/kdb-common/wiki/util.q
+
 .require.lib each `type`time;
 
 

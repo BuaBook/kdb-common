@@ -1,6 +1,8 @@
 // CSV Parsing and Writing Functions
 // Copyright (c) 2016 - 2017 Sport Trades Ltd
 
+// Documentation: https://github.com/BuaBook/kdb-common/wiki/csv.q
+
 .require.lib each `type`util`convert;
 
 

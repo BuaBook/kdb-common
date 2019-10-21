@@ -1,6 +1,8 @@
 // Type Conversion Functions
 // Copyright (c) 2015 - 2017 Sport Trades Ltd
 
+// Documentation: https://github.com/BuaBook/kdb-common/wiki/convert.q
+
 .require.lib `type;
 
 / @returns (Timespan) The supplied milliseconds in timespan form

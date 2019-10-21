@@ -1,6 +1,8 @@
 // Timezone Conversion Library
 // Copyright (c) 2019 Sport Trades Ltd
 
+// Documentation: https://github.com/BuaBook/kdb-common/wiki/tz.q
+
 // INFO: This library is a implementation of the code described at https://code.kx.com/v2/kb/timezones/
 
 

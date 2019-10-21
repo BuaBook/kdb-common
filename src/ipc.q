@@ -1,6 +1,8 @@
 // Inter Process Communication Functionality
 // Copyright (c) 2017 Sport Trades Ltd
 
+// Documentation: https://github.com/BuaBook/kdb-common/wiki/ipc.q
+
 .require.lib each `util`type`convert`time;
 
 
