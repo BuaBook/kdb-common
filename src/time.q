@@ -1,6 +1,8 @@
 // Time Accessor Functions
 // Copyright (c) 2017 Sport Trades Ltd
 
+// Documentation: https://github.com/BuaBook/kdb-common/wiki/time.q
+
 // The functions in this library are simple wrappers on top of the standard .z.* date/time primitive values.
 // Use this library to make it easier to change time zones in the future. If the time zone must be changed,
 // simply override this library with your custom definitions

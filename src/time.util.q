@@ -1,6 +1,8 @@
 // Time Utility Functions
 // Copyright (c) 2018 Sport Trades Ltd
 
+// Documentation: https://github.com/BuaBook/kdb-common/wiki/time.util.q
+
 / Day integer (from 'mod') to 3 letter abbrieviation mapping
 .time.c.days:`sat`sun`mon`tue`wed`thu`fri;
 

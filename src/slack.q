@@ -1,6 +1,8 @@
 // Slack Notification Integration via WebHook
 // Copyright (c) 2019 Sport Trades Ltd
 
+// Documentation: https://github.com/BuaBook/kdb-common/wiki/slack.q
+
 .require.lib each `type`ns;
 
 // NOTE: Depending on your OS, you might need to update the location of the SSL certificates on your machine.

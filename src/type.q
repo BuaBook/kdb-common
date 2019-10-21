@@ -1,6 +1,8 @@
 // Type Checking
 // Copyright (c) 2016 Sport Trades Ltd
 
+// Documentation: https://github.com/BuaBook/kdb-common/wiki/type.q
+
 .type.const.infinites:raze (::;neg)@\:(0Wh;0Wi;0Wj;0We;0Wf;0Wp;0Wm;0Wd;0Wz;0Nn;0Wu;0Wv;0Wt);
 
 

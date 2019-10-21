@@ -1,6 +1,8 @@
 // Namespace Management Functions
 // Copyright (c) 2016 - 2019 Sport Trades Ltd
 
+// Documentation: https://github.com/BuaBook/kdb-common/wiki/ns.q
+
 .require.lib each `type`convert;
 
 

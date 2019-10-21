@@ -1,6 +1,8 @@
 // Logging Library
 // Copyright (c) 2015 - 2017 Sport Trades Ltd
 
+// Documentation: https://github.com/BuaBook/kdb-common/wiki/log.q
+
 .require.lib each `util`type`time;
 
 

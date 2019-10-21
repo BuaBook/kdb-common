@@ -1,5 +1,7 @@
 // Cron Job Scheduler
-// Copyright (c) 2017 Sport Trades Ltd
+// Copyright (c) 2017 - 2019 Sport Trades Ltd
+
+// Documentation: https://github.com/BuaBook/kdb-common/wiki/cron.q
 
 .require.lib each `util`ns`type`convert`time;
 
