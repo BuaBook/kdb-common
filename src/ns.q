@@ -80,6 +80,7 @@
 / @param x (Symbol|Function) The function to check the arguments for
 / @returns (SymbolList) The arguments required for the specified function
 / @throws FunctionDoesNotExistException If a symbol reference specified does not exist
+/ @throws IllegalArgumentException If the specified value (or dereferenced value) is not a function
 / @see .ns.isSet
 .ns.getFunctionArguments:{
     if[.type.isSymbol x;
@@ -88,6 +89,10 @@
         ];
 
         x:get x;
+    ];
+
+    if[not .type.isFunction x;
+        '"IllegalArgumentException";
     ];
 
     :@[;1] get x;
