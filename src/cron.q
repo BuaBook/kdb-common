@@ -83,12 +83,18 @@
 /  @returns (Long) The ID of the new cron job
 /  @throws InvalidCronJobIntervalException If the interval specified is smaller than the cron interval
 /  @throws FunctionDoesNotExistFunction If the function for the cron job does not exist
+/  @throws ReferenceIsNotAFunctionException If the symbol reference for the function is not actually a function
 /  @throws InvalidCronRunTypeException If the run type specified is not present in .cron.cfg.runners
 /  @throws InvalidCronJobTimeException If the start time specified is before the current time or the end time is before the start time
 .cron.add:{[func;args;runType;startTime;endTime;interval]
     if[not .ns.isSet func;
         .log.error "Function to add to cron does not exist [ Function: ",string[func]," ]";
         '"FunctionDoesNotExistFunction";
+    ];
+
+    if[not .type.isFunction get func;
+        .log.error "Symbol reference for cron job is not a function [ Reference: ",string[func]," ]";
+        '"ReferenceIsNotAFunctionException";
     ];
 
     if[not runType in key .cron.cfg.runners;
