@@ -7,13 +7,11 @@
 
 
 / The interval at which the cron system checks for jobs to run. This uses the built-in
-/ kdb system timer;
+/ kdb system timer
 .cron.cfg.timerInterval:100i;
 
-/ Unique job ID for each cron job added
-.cron.cfg.jobId:1;
-
-/ Configures if job status should be stored or not. If true, the job's status will be recorded in .cron.status.
+/ Configures if job status should be stored or not. If true, the status of all job's will be recorded in '.cron.status'.
+/ Even with this option disabled, all cron job failures will be stored for debugging
 / Cron by default clears the status table every day at midnight to ensure the table doesn't grow too large
 /  @see .cron.status
 .cron.cfg.logStatus:1b;
@@ -23,11 +21,17 @@
 .cron.cfg.runners[`once]:`.cron.i.runOnce;
 .cron.cfg.runners[`repeat]:`.cron.i.runRepeat;
 
+
+/ Unique job ID for each cron job added
+.cron.jobId:1;
+
 / The configured cron jobs for this process
 .cron.jobs:`id xkey flip `id`func`args`runType`startTime`endTime`interval`nextRunTime!"JS*SPPNP"$\:();
 
-/ The status of each cron job execution
+/ The status of each cron job execution (with null row inserted)
+/ NOTE: If the job fails, result will contain a dictionary with `errorMsg and, optionally, `backtrace
 .cron.status:flip `id`func`expectedStartTime`startTime`runTime`success`result!"JSPPNB*"$\:();
+`.cron.status upsert @[first .cron.status; `result; :; (::)];
 
 
 / NOTE: The initialistion function will not overwrite .z.ts if it is already set.
@@ -41,7 +45,7 @@
     .cron.enable[];
 
     if[not `.cron.cleanStatus in exec func from .cron.jobs;
-        .cron.addRepeatForeverJob[`.cron.cleanStatus;(::);`timestamp$.z.d+1;1D];
+        .cron.addRepeatForeverJob[`.cron.cleanStatus; (::); `timestamp$.time.today[]+1; 1D];
     ];
  };
 
@@ -107,8 +111,8 @@
         '"InvalidCronJobIntervalException";
     ];
 
-    jobId:.cron.cfg.jobId;
-    .cron.cfg.jobId+:1;
+    jobId:.cron.jobId;
+    .cron.jobId+:1;
 
     `.cron.jobs upsert (jobId;func;args;runType;startTime;endTime;interval;startTime);
 
@@ -161,7 +165,7 @@
 /  @see .cron.status
 .cron.cleanStatus:{
     delete from `.cron.jobs where nextRunTime = 0Wp;
-    delete from `.cron.status;
+    delete from `.cron.status where not null id;
  };
 
 / The main cron function that is bound to .z.ts as part of the initialisation
@@ -220,15 +224,16 @@
 
     status:1b;
 
-    if[.ns.const.pExecFailure~first result;
+    if[.ns.const.pExecFailure ~ first result;
         .log.error "Cron job failed to execute [ Job ID: ",string[jobId]," ]. Error - ",last result;
         status:0b;
-        result:last result;
+
+        result:(`errorMsg`backtrace inter key result)#result;
     ];
 
     / Cron job failures will always be logged
     if[.cron.cfg.logStatus | not status;
-        `.cron.status upsert jobId,(jobDetails`func`nextRunTime),(startTimer;endTimer - startTimer;status;enlist result);
+        `.cron.status upsert jobId,jobDetails[`func`nextRunTime],(startTimer;endTimer - startTimer;status;result);
     ];
 
     :status;
