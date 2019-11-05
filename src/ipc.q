@@ -103,7 +103,7 @@
 
     .log.info "Successfully connected to ",logHostPort," on handle ",string h;
 
-    `.ipc.outbound upsert (h; .type.ensureHostPortSymbol hostPort; .time.now[]);
+    `.ipc.outbound upsert (h; `$logHostPort; .time.now[]);
 
     :h;
   };
