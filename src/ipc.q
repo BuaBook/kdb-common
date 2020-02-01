@@ -94,7 +94,7 @@
 
     .log.info "Attempting to connect to ",logHostPort," (timeout ",string[timeout]," ms)";
 
-    h:@[hopen;hostPort;{ (`CONN_FAIL;x) }];
+    h:@[hopen; (hostPort; timeout); { (`CONN_FAIL;x) }];
 
     if[`CONN_FAIL~first h;
         .log.error "Failed to connect to ",logHostPort,". Error - ",last h;
