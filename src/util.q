@@ -153,9 +153,7 @@ k).util.showNoLimit:{
 
 /  @param x (List) A list to check if all values are unique
 /  @returns (Boolean) True if the specified list has only unique values
-.util.isDistinct:{
-    :x~distinct x;
- };
+.util.isDistinct:.type.isDistinct;
  
 / String find and replace. If multiple 'find' arguments are supplied the equivalent number of
 / replace arguments must also be specified

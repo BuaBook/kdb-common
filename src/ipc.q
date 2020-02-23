@@ -43,11 +43,11 @@
 
 / Open a connection to the specified host and port
 /  @param host (Symbol) The hostname to connect to
-/  @param port (Integer) The post to connect to
+/  @param port (Short|Integer|Long) The post to connect to
 /  @return (Integer) The handle to that process if the connection is successful
 /  @see .ipc.connect
 .ipc.connectWithHp:{[host;port]
-    if[(not .type.isSymbol host) | not .type.isInteger port;
+    if[(not .type.isSymbol host) | not .type.isWholeNumber port;
         '"IllegalArgumentException";
     ];
 
