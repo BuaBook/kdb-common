@@ -70,6 +70,11 @@
     :1b~.Q.qp $[.type.isSymbol x;get;::] x;
  };
 
+/  @returns (Boolean) If one or more columns in the table are enumerated
+.type.isEnumeratedTable:{
+    :any .type.isEnumeration each .Q.V x;
+ };
+
 .type.isFunction:{
     :type[x] in `short$100 + til 13;
  };
