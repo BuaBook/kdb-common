@@ -1,9 +1,10 @@
 // Type Conversion Functions
-// Copyright (c) 2015 - 2017 Sport Trades Ltd
+// Copyright (c) 2015 - 2020 Sport Trades Ltd
 
 // Documentation: https://github.com/BuaBook/kdb-common/wiki/convert.q
 
 .require.lib `type;
+
 
 / @returns (Timespan) The supplied milliseconds in timespan form
 .convert.msToTimespan:{
@@ -53,3 +54,33 @@
 .convert.genericListToString:{[list]
     :(raze/) .type.ensureString@/:list;
  };
+
+/ Converts a kdb table into a HTML <table> representation of it
+/  @param tbl (Table) A table with all values of the table convertable to string by '.type.ensureString'
+/  @returns (String) A HTML version of the table
+/  @throws IllegalArgumentException If the parameter is not a table
+/  @throws MixedListColumnsNotSupportedException If any mixed list columns are present in the table
+/  @see .type.ensureString
+.convert.tableToHtml:{[tbl]
+    if[not .type.isTable tbl;
+        '"IllegalArgumentException";
+    ];
+
+    if[.type.isKeyedTable tbl;
+        tbl:0!tbl;
+    ];
+
+    badColumns:where .type.isMixedList each .Q.V tbl;
+    badColumns:badColumns except where .type.isString each badColumns#first tbl;
+
+    if[0 < count badColumns;
+        '"MixedListColumnsNotSupportedException (Columns: ",.convert.listToString[badColumns],")";
+    ];
+
+    header:.h.htc[`thead;] .h.htc[`tr;] raze .h.htc[`th;] each .type.ensureString each cols tbl;
+
+    body:"\n" sv { .h.htc[`tr;] raze .h.htc[`td;] each .type.ensureString each x } each tbl;
+
+    :"\n",.h.htc[`table;] header,"\n",body;
+ };
+
