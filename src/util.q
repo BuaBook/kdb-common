@@ -186,3 +186,9 @@ k).util.showNoLimit:{
 
     :diffStats;
  };
+
+/  @returns (Boolean) True if the OpenSSL libraries have been loaded into the kdb+ process, false otherwise
+.util.isTlsAvailable:{
+    sslStatus:@[-26!; (::); { (`TLS_NOT_AVAILABLE; x) }];
+    :not `TLS_NOT_AVAILABLE~first sslStatus;
+ };
