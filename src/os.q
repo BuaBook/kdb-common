@@ -48,6 +48,28 @@
     :not "B"$osCheck;
  };
 
+/  @returns (String) Current terminal window size in system "c" format - "*lines* *columns*"
+.os.getTerminalSize:{
+    rawTermSize:trim .os.run[`terminalSize; ""];
+    termSize:"";
+
+    $[`l = .os.type;
+        termSize:" " vs first rawTermSize;
+    `w = .os.type;
+        termSize:trim last each ":" vs/: rawTermSize raze where each rawTermSize like/: ("Lines:*"; "Columns:*")
+    ];
+
+    :" " sv termSize;
+ };
+
+/  @returns (Boolean) True if the kdb process is running in an interactive session, false otherwise
+.os.isInteractiveSession:{
+    interactRes:.os.run[`isInteractive; ::];
+
+    if[`l = .os.type;
+        :not "B"$first interactRes;
+    ];
+ };
 
 .os.i.getOsType:{
     :`$first string .z.o;
@@ -145,6 +167,10 @@
     :"xcopy /e /y ",.os.i.convertPathForWindows[args 0]," ",.os.i.convertPathForWindows args 1;
  };
 
+.os.w.terminalSize:{
+    :"mode con";
+ };
+
 // Linux Implementation
 
 .os.l.mkdir:{
@@ -234,4 +260,13 @@
 .os.l.cpFolder:{
     args:"|" vs x;
     :"cp -rv ",args[0]," ",args 1;
+ };
+
+.os.l.terminalSize:{
+    :"stty size";
+ };
+
+/  'tty' exits 9 if there is a TTY attached, 1 otherwise
+.os.l.isInteractive:{
+    :"tty --quiet; echo $?";
  };

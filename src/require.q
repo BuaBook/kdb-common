@@ -181,6 +181,7 @@
  };
 
 
+.log.trace:-1;
 .log.debug:-1
 .log.info:-1;
 .log.warn:-1;
