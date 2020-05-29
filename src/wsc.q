@@ -3,7 +3,7 @@
 
 // Documentation: https://github.com/BuaBook/kdb-common/wiki/wsc.q
 
-.require.lib each `type`util`ns;
+.require.lib each `type`ns`http;
 
 
 / If true, all new WebSocket connections created will be logged to the '.ipc.outbound' table. On library init,
@@ -12,9 +12,6 @@
 
 / The valid URL schemes to attempt a WebSocket connection to
 .wsc.cfg.validUrlSchemes:`ws`wss;
-
-/ The template HTTP connection request to create a WebSocket
-.wsc.cfg.httpConnTemplate:"GET / HTTP/1.1\r\nHost: ~~WS_HOST_PORT_TEMP~~\r\n\r\n"
 
 
 .wsc.init:{
@@ -31,10 +28,10 @@
 /  @returns (Integer) A valid handle to communicate with the target server
 /  @throws ZWsHandlerNotSetException If '.z.ws' is not set prior to calling this function
 /  @throws InvalidWebSocketUrlException If the URL does not being with 'ws://' or 'wss://'
-/  @throws TlsNotAvailableException If a 'wss://' WebSocket is specified, but TLS is not available on the current process
 /  @throws WebSocketConnectionFailedException If the connection fails
-/  @see .util.isTlsAvailable
-/  @see .wsc.i.buildHttpRequest
+/  @see .http.i.getUrlDetails
+/  @see .http.i.buildRequest
+/  @see .http.i.send
 /  @see .ipc.outbound
 .wsc.connect:{[url]
     if[not .type.isString url;
@@ -53,23 +50,15 @@
         '"InvalidWebSocketUrlException";
     ];
 
-    if[url like "wss://*";
-        if[not .util.isTlsAvailable[];
-            .log.error "Cannot open connection to TLS-encrypted WebSocket as TLS is not avilable in the current process";
-            '"TlsNotAvailableException";
-        ];
-    ];
-
-    httpConnStr:.wsc.i.buildHttpRequest url;
 
     .log.info "Attempting to connect to ",url," via WebSocket";
 
-    urlConn:`$":",url;
+    urlParts:.http.i.getUrlDetails url;
 
-    wsResp:@[urlConn; httpConnStr; { (`WS_CONN_FAIL; x) }];
+    wsResp:.http.i.send[urlParts; .http.i.buildRequest[`GET; urlParts; ()!(); ""]];
     handle:first wsResp;
 
-    if[null[handle] | `WS_CONN_FAIL ~ handle;
+    if[null handle;
         .log.error "Failed to connect to ",url," via WebSocket. Error: ",last wsResp;
         '"WebSocketConnectionFailedException";
     ];
@@ -78,29 +67,9 @@
     .log.debug "WebSocket response:\n",last wsResp;
 
     if[.wsc.cfg.logToIpc;
-        `.ipc.outbound upsert (handle; urlConn; .time.now[]);
+        `.ipc.outbound upsert (handle; `$raze urlParts`scheme`baseUrl`path; .time.now[]);
     ];
 
     :handle;
  };
 
-/ Builds the HTTP request string to attempt to open a WebSocket
-/  @param url (String) The target server to create a WebSocket connection to
-/  @returns (String) The HTTP request string
-/  @throws InvalidWebSocketUrlException If the host:port part of the URL is empty
-/  @see .wsc.cfg.httpConnTemplate
-.wsc.i.buildHttpRequest:{[url]
-    if[not .type.isString url;
-        '"InvalidArgumentException";
-    ];
-
-    urlNoScheme:last "://" vs url;
-
-    if[0 = count urlNoScheme;
-        .log.error "Invalid WebSocket url - no URL after scheme [ URL: ",string[url]," ]";
-        '"InvalidWebSocketUrlException";
-    ];
-
-    httpConnStr:ssr[.wsc.cfg.httpConnTemplate; "~~WS_HOST_PORT_TEMP~~"; urlNoScheme];
-    :httpConnStr;
- };
