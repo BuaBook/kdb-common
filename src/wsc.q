@@ -1,5 +1,5 @@
 // WebSocket Client Library
-// Copyright (c) 2020 Sport Trades Ltd
+// Copyright (c) 2020 Jaskirat Rajasansir
 
 // Documentation: https://github.com/BuaBook/kdb-common/wiki/wsc.q
 
