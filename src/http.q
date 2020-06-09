@@ -1,5 +1,5 @@
 // HTTP Query Library
-// Copyright (c) 2020 Sport Trades Ltd
+// Copyright (c) 2020 Jaskirat Rajasansir
 
 // Documentation: https://github.com/BuaBook/kdb-common/wiki/http.q
 
@@ -18,9 +18,6 @@
 / error will be logged but the body will be returned as received
 .http.cfg.errorOnInvaildContentEncoding:1b;
 
-/ The new line separator for HTTP requests
-.http.cfg.newLine:"\r\n";
-
 / The HTTP version to send to the target server
 .http.cfg.httpVersion:"HTTP/1.1";
 
@@ -33,6 +30,15 @@
 .http.cfg.proxyEnvVars[`$("https://"; "wss://")]:   2#`HTTPS_PROXY;
 .http.cfg.proxyEnvVars[`bypass]:                    `NO_PROXY;
 
+/ The list of values that indicate JSON has been returned and '.http.i.parseResponse' should run the JSON parser on it
+.http.cfg.jsonContentTypes:enlist "application/json";
+
+/ If true, if the HTTP response is a redirect type, another request to the specified target location will be made
+.http.cfg.followRedirects:1b;
+
+
+/ The new line separator for HTTP requests
+.http.newLine:"\r\n";
 
 / The cached or latest proxy information
 .http.proxy:key[.http.cfg.proxyEnvVars]!count[.http.cfg.proxyEnvVars]#"";
@@ -45,6 +51,9 @@
 
 / Step dictionary of HTTP response codes to their types for additional information
 .http.responseTypes:`s#100 200 300 400 500i!`informational`success`redirect`clientError`serverError;
+
+/ Headers that are extracted in '.http.i.parseResponse' for post processing
+.http.extractHeaders:`contentType`contentEncoding!`$("content-type";"content-encoding");
 
 
 .http.init:{
@@ -68,44 +77,70 @@
 
 / Peforms a HTTP GET to the target URL and parses the response
 /  @param url (String) The target URL to query
-/  @param headers (Dict) A set of headers to optionally send with the GET request
+/  @param headers (Dict) A set of headers to optionally send with the GET request. This dictionary must have symbol keys and string values.
 /  @returns (Dict) The HTTP response parsed by '.http.i.parseResponse'
+/  @throws InvalidHeaderKeyTypeException If any of the header names are not a symbol
+/  @throws InvalidHeaderValueTypeException If any of the header values are not a string
 /  @see .http.i.getUrlDetails
 /  @see .http.i.buildRequest
 /  @see .http.i.send
 /  @see .http.i.parseResponse
 .http.get:{[url; headers]
-    if[not all (.type.isString; .type.isDict) @' (url; headers);
-        '"IllegalArgumentException";
-    ];
-
-    urlParts:.http.i.getUrlDetails url;
-
-    headers,:enlist[`connection]!enlist "close";
-
-    :.http.i.parseResponse .http.i.send[urlParts; .http.i.buildRequest[`GET; urlParts; headers; ""]];
+    headers[`Connection]:"close";
+    :.http.send[`GET; url; ""; ""; headers];
  };
 
 / Performs a HTTP POST to the target URL and parses the response
 /  @param url (String) The target URL to send data to
 /  @param body (String) The body content to send
 /  @param contentType (String) The optional type of the content being sent. If empty, will default to 'text/plain'
-/  @param headers (Dict) A set of headers to optionally send with the POST request
+/  @param headers (Dict) A set of headers to optionally send with the POST request. This dictionary must have symbol keys and string values.
 /  @returns (Dict) The HTTP response parsed by '.http.i.parseResponse'
+/  @throws InvalidHeaderKeyTypeException If any of the header names are not a symbol
+/  @throws InvalidHeaderValueTypeException If any of the header values are not a string
 /  @see .http.i.getUrlDetails
 /  @see .http.i.buildRequest
 /  @see .http.i.send
 /  @see .http.i.parseResponse
 .http.post:{[url; body; contentType; headers]
-    if[not all ((3#.type.isString), .type.isDict) @' (url; body; contentType; headers);
+    headers[`Connection]:"close";
+    :.http.send[`POST; url; body; contentType; headers];
+ };
+
+
+.http.send:{[method; url; body; contentType; headers]
+    if[not all (.type.isSymbol,(3#.type.isString),.type.isDict) @' (method; url; body; contentType; headers);
         '"IllegalArgumentException";
+    ];
+
+    if[0 < count headers;
+        if[not all .type.isSymbol each key headers;
+            '"InvalidHeaderKeyTypeException";
+        ];
+
+        if[not all .type.isString each value headers;
+            '"InvalidHeaderValueTypeException";
+        ];
+    ];
+
+    if[0 < count contentType;
+        headers[`$"Content-Type"]:contentType;
     ];
 
     urlParts:.http.i.getUrlDetails url;
 
-    headers,:(`Connection,`$"Content-Type")!("close"; .type.ensureString contentType);
+    response:.http.i.parseResponse .http.i.send[urlParts;] .http.i.buildRequest[method; urlParts; headers; body];
 
-    :.http.i.parseResponse .http.i.send[urlParts; .http.i.buildRequest[`POST; urlParts; headers; body]];
+    if[.http.cfg.followRedirects & `redirect = response`statusType;
+        location:response[`headers] key[response`headers] first where `location = lower key response`headers;
+
+        if[0 < count location;
+            .log.info "Following HTTP redirect as configured [ Original URL: ",url," ] [ New URL: ",location," ]";
+            response:.http.send[method; location; body; contentType; headers];
+        ];
+    ];
+
+    :response;
  };
 
 
@@ -120,7 +155,7 @@
 /  @param headers (Dict) The set of headers to sent with the request
 /  @param body (String) The body of content to send as part of the request
 /  @returns (String) A complete HTTP request string that can be sent to the remote server
-/  @see .http.cfg.newLine
+/  @see .http.newLine
 /  @see .http.userAgent
 /  @see .http.cfg.httpVersion
 /  @see .http.i.headerToString
@@ -140,7 +175,7 @@
             headers[`$"Content-Type"]:"text/plain";
         ];
 
-        body,:.http.cfg.newLine;
+        body,:.http.newLine;
     ];
 
     if[0 < count urlParts`auth;
@@ -160,7 +195,7 @@
     request:enlist " " sv (string requestType; urlPath; .http.cfg.httpVersion);
     request,:.http.i.headerToString ./: flip (key;value)@\: enlist[`]_ headers;
 
-    :.http.cfg.newLine sv request,enlist[.http.cfg.newLine],body;
+    :.http.newLine sv request,enlist .http.newLine,body;
  };
 
 /  @param url (String) The URL to breakdown into its constituent parts
@@ -293,17 +328,17 @@
 /  * `statusType: The status code type (based on '.http.responseTypes'
 /  * `statusDetail: The status code detail as returned from the server
 /  * `headers: The returned headers as a dictionary
-/  * `body: Any body response
+/  * `body: Any body response as a string with new line separators
 /  @param responseStr (String) The HTTP response string
 /  @returns (Dict) A dictionary of the parsed HTTP response
 /  @throws InvalidContentEncodingException If '.http.cfg.errorOnInvaildContentEncoding' is true and an unsupported content encoding is returned
-/  @see .http.cfg.newLine
+/  @see .http.newLine
 /  @see .http.cfg.httpVersion
 /  @see .http.responseTypes
 /  @see .http.gzAvailable
 /  @see .Q.gz
 .http.i.parseResponse:{[responseStr]
-    responseStr:.http.cfg.newLine vs responseStr;
+    responseStr:.http.newLine vs responseStr;
 
     response:`statusCode`statusType`statusDetail`headers`body!(0Ni; `; ""; ()!(); "");
 
@@ -317,25 +352,31 @@
     hdrDict:(!). "S*" $' flip ": " vs/:headers;
     response[`headers]:hdrDict;
 
-    body:(hdrEnd + 1) _ responseStr;
+    body:raze (hdrEnd + 1) _ responseStr;
 
-    encHdr:first key[hdrDict] where (`$"content-encoding") = lower key hdrDict;
+    / Headers extracted required for response post-processing
+    ppHeaders:key[.http.extractHeaders]!hdrDict key[hdrDict] first each where each value[.http.extractHeaders] =\: lower key hdrDict;
 
-    if[not null encHdr;
-        encType:hdrDict encHdr;
-
-        if[.http.gzAvailable & "gzip" ~ encType;
+    if[0 < count ppHeaders`contentEncoding;
+        if[.http.gzAvailable & "gzip" ~ ppHeaders`contentEncoding;
             body:.Q.gz body;
         ];
 
-        if[not[.http.gzAvailable] | not "gzip" ~ encType;
-            .log.error "Invalid content encoding in HTTP response [ Specified: ",encType," ] [ Supported: ",string[`none`gzip .http.gzAvailable]," ]";
+        if[not[.http.gzAvailable] | not "gzip" ~ ppHeaders`contentEncoding;
+            .log.error "Invalid content encoding in HTTP response [ Specified: ",ppHeaders[`contentEncoding]," ] [ Supported: ",string[`none`gzip .http.gzAvailable]," ]";
 
             if[.http.cfg.errorOnInvaildContentEncoding;
                 '"InvalidContentEncodingException";
             ];
         ];
+    ];
 
+    if[0 < count ppHeaders`contentType;
+        contentTypes:trim ";" vs ppHeaders`contentType;
+
+        if[any .http.cfg.jsonContentTypes in contentTypes;
+            body:.j.k body;
+        ];
     ];
 
     response[`body]:body;
