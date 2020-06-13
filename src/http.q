@@ -3,6 +3,9 @@
 
 // Documentation: https://github.com/BuaBook/kdb-common/wiki/http.q
 
+// NOTE: For TLS-encrypted HTTP requests, ensure that OpenSSL 1.0 is available as 'libssl.so' on the library path
+//       'export KX_SSL_VERIFY_SERVER=NO' can also be useful if the certificate path cannot be validated
+
 .require.lib each `type`util`ns;
 
 
@@ -18,8 +21,12 @@
 / error will be logged but the body will be returned as received
 .http.cfg.errorOnInvaildContentEncoding:1b;
 
-/ The HTTP version to send to the target server
-.http.cfg.httpVersion:"HTTP/1.1";
+/ If true, if the HTTP response is a redirect type, another request to the specified target location will be made. If
+/ false, the redirect response will be returned
+.http.cfg.followRedirects:1b;
+
+/ The list of values that indicate JSON has been returned and '.http.i.parseResponse' should run the JSON parser on it
+.http.cfg.jsonContentTypes:enlist "application/json";
 
 / The valid TLS-enabled URL schemes
 .http.cfg.tlsSchemes:`https`wss;
@@ -30,15 +37,12 @@
 .http.cfg.proxyEnvVars[`$("https://"; "wss://")]:   2#`HTTPS_PROXY;
 .http.cfg.proxyEnvVars[`bypass]:                    `NO_PROXY;
 
-/ The list of values that indicate JSON has been returned and '.http.i.parseResponse' should run the JSON parser on it
-.http.cfg.jsonContentTypes:enlist "application/json";
-
-/ If true, if the HTTP response is a redirect type, another request to the specified target location will be made
-.http.cfg.followRedirects:1b;
-
 
 / The new line separator for HTTP requests
 .http.newLine:"\r\n";
+
+/ The HTTP version to send to the target server
+.http.httpVersion:"HTTP/1.1";
 
 / The cached or latest proxy information
 .http.proxy:key[.http.cfg.proxyEnvVars]!count[.http.cfg.proxyEnvVars]#"";
@@ -76,38 +80,49 @@
 
 
 / Peforms a HTTP GET to the target URL and parses the response
-/  @param url (String) The target URL to query
-/  @param headers (Dict) A set of headers to optionally send with the GET request. This dictionary must have symbol keys and string values.
-/  @returns (Dict) The HTTP response parsed by '.http.i.parseResponse'
-/  @throws InvalidHeaderKeyTypeException If any of the header names are not a symbol
-/  @throws InvalidHeaderValueTypeException If any of the header values are not a string
-/  @see .http.i.getUrlDetails
-/  @see .http.i.buildRequest
-/  @see .http.i.send
-/  @see .http.i.parseResponse
+/ NOTE: The header "Connection: close" is sent with this request
+/  @see .http.send
 .http.get:{[url; headers]
     headers[`Connection]:"close";
     :.http.send[`GET; url; ""; ""; headers];
  };
 
 / Performs a HTTP POST to the target URL and parses the response
+/ NOTE: The header "Connection: close" is sent with this request
+/  @see .http.send
+.http.post:{[url; body; contentType; headers]
+    headers[`Connection]:"close";
+    :.http.send[`POST; url; body; contentType; headers];
+ };
+
+/ Performs a HTTP PUT to the target URL and parses the response
+/ NOTE: The header "Connection: close" is sent with this request
+/  @see .http.send
+.http.put:{[url; body; contentType; headers]
+    headers[`Connection]:"close";
+    :.http.send[`PUT; url; body; contentType; headers];
+ };
+
+/ Performs a HTTP DELETE to the target URL and parses the response
+/ NOTE: The header "Connection: close" is sent with this request
+/  @see .http.send
+.http.delete:{[url; body; contentType; headers]
+    headers[`Connection]:"close";
+    :.http.send[`DELETE; url; body; contentType; headers];
+ };
+
+/ Sends a HTTP request and parses the response
+/  @param method (Symbol) The HTTP method that the request will be sent as
 /  @param url (String) The target URL to send data to
 /  @param body (String) The body content to send
 /  @param contentType (String) The optional type of the content being sent. If empty, will default to 'text/plain'
 /  @param headers (Dict) A set of headers to optionally send with the POST request. This dictionary must have symbol keys and string values.
-/  @returns (Dict) The HTTP response parsed by '.http.i.parseResponse'
 /  @throws InvalidHeaderKeyTypeException If any of the header names are not a symbol
 /  @throws InvalidHeaderValueTypeException If any of the header values are not a string
 /  @see .http.i.getUrlDetails
 /  @see .http.i.buildRequest
 /  @see .http.i.send
 /  @see .http.i.parseResponse
-.http.post:{[url; body; contentType; headers]
-    headers[`Connection]:"close";
-    :.http.send[`POST; url; body; contentType; headers];
- };
-
-
 .http.send:{[method; url; body; contentType; headers]
     if[not all (.type.isSymbol,(3#.type.isString),.type.isDict) @' (method; url; body; contentType; headers);
         '"IllegalArgumentException";
@@ -123,7 +138,11 @@
         ];
     ];
 
-    if[0 < count contentType;
+    if[0 < count body;
+        if[0 = count contentType;
+            contentType:"text/plain";
+        ];
+
         headers[`$"Content-Type"]:contentType;
     ];
 
@@ -157,7 +176,7 @@
 /  @returns (String) A complete HTTP request string that can be sent to the remote server
 /  @see .http.newLine
 /  @see .http.userAgent
-/  @see .http.cfg.httpVersion
+/  @see .http.httpVersion
 /  @see .http.i.headerToString
 .http.i.buildRequest:{[requestType; urlParts; headers; body]
     headers:(1#.q),headers;
@@ -192,7 +211,7 @@
 
     headers[`host]:urlParts`baseUrl;
 
-    request:enlist " " sv (string requestType; urlPath; .http.cfg.httpVersion);
+    request:enlist " " sv (string requestType; urlPath; .http.httpVersion);
     request,:.http.i.headerToString ./: flip (key;value)@\: enlist[`]_ headers;
 
     :.http.newLine sv request,enlist .http.newLine,body;
@@ -333,7 +352,7 @@
 /  @returns (Dict) A dictionary of the parsed HTTP response
 /  @throws InvalidContentEncodingException If '.http.cfg.errorOnInvaildContentEncoding' is true and an unsupported content encoding is returned
 /  @see .http.newLine
-/  @see .http.cfg.httpVersion
+/  @see .http.httpVersion
 /  @see .http.responseTypes
 /  @see .http.gzAvailable
 /  @see .Q.gz
@@ -342,7 +361,7 @@
 
     response:`statusCode`statusType`statusDetail`headers`body!(0Ni; `; ""; ()!(); "");
 
-    status:last .http.cfg.httpVersion vs first responseStr;
+    status:last .http.httpVersion vs first responseStr;
     response[`statusCode`statusDetail]:"I*"$' (5#; 5_) @\: status;
     response[`statusType]:.http.responseTypes response`statusCode;
 
