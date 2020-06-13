@@ -22,8 +22,6 @@
 
 
 / Create a WebSocket connection to the specified URL
-/ NOTE: For TLS-encrypted WebSockets, ensure that OpenSSL 1.0 is available as 'libssl.so' on the library path
-/       'export KX_SSL_VERIFY_SERVER=NO' can also be useful if the certificate path cannot be validated
 /  @param url (String) The target server to create a WebSocket connection to
 /  @returns (Integer) A valid handle to communicate with the target server
 /  @throws ZWsHandlerNotSetException If '.z.ws' is not set prior to calling this function
