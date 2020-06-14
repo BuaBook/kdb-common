@@ -183,8 +183,23 @@
    
     urlPath:urlParts`path;
 
+    if["?" in urlPath;
+        urlArgs:last "?" vs urlPath;
+        urlArgs:"=" vs/: "&" vs urlArgs;
+
+        if[not all 2 = count each urlArgs;
+            .log.error "URL query string is invalid, must be ampersand separated 'key=value' pairs [ URL: ",urlParts[`path]," ]";
+            '"InvalidUrlQueryStringException";
+        ];
+
+        urlArgs:.h.hu@/:/: urlArgs;
+        urlArgs:"&" sv "=" sv/: urlArgs;
+
+        urlPath:first["?" vs urlPath],"?",urlArgs;
+    ];
+
     if[urlParts`proxy;
-        urlPath:raze urlParts`scheme`baseUrl`path;
+        urlPath:raze urlParts[`scheme`baseUrl],urlPath;
     ];
 
     if[0 < count body;
