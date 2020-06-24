@@ -1,5 +1,5 @@
 // Code Loading Library
-// Copyright (c) 2016 - 2017 Sport Trades Ltd
+// Copyright (c) 2016 - 2017 Sport Trades Ltd, (c) 2020 Jaskirat Rajasansir
 
 // Documentation: https://github.com/BuaBook/kdb-common/wiki/require.q
 
@@ -19,6 +19,15 @@
 / Complete list of discovered files from the root directory
 .require.location.discovered:enlist`;
 
+/ Required interface implementations for 'require' and related kdb-common libraries to function correctly
+.require.interfaces:`lib`ifFunc xkey flip `lib`ifFunc`implFunc!"SS*"$\:();
+.require.interfaces[`log`.log.if.trace]:{ -1 x };
+.require.interfaces[`log`.log.if.debug]:{ -1 x };
+.require.interfaces[`log`.log.if.info]: { -1 x };
+.require.interfaces[`log`.log.if.warn]: { -1 x };
+.require.interfaces[`log`.log.if.error]:{ -2 x };
+.require.interfaces[`log`.log.if.fatal]:{ -2 x };
+
 
 .require.init:{[root]
     $[null root;
@@ -26,14 +35,18 @@
         .require.location.root:root
     ];
 
+    .require.i.setDefaultInterfaces[];
+
     (.require.markLibAsLoaded;.require.markLibAsInited)@\:`require;
     
-    .log.info "Require library initialised [ Root: ",string[.require.location.root]," ]";
-
     / If file tree has already been specified, don't overwrite
     if[.require.location.discovered~enlist`;
         .require.rescanRoot[];
     ];
+
+    .require.i.initInterfaceLibrary[];
+
+    .log.if.info "Require library initialised [ Root: ",string[.require.location.root]," ]";
  };
 
 
@@ -67,7 +80,7 @@
 .require.rescanRoot:{
     .require.location.discovered:.require.i.tree .require.location.root;
 
-    .log.info "Library root location refreshed [ File Count: ",string[count .require.location.discovered]," ]";
+    .log.if.info "Library root location refreshed [ File Count: ",string[count .require.location.discovered]," ]";
  };
 
 / Marks the specified library as loaded in the loaded libraries table. NOTE: This
@@ -89,21 +102,21 @@
 /  @throws LibraryDoesNotExistException If no files are found for the specified library
 /  @throws LibraryLoadException If any of the library files fail to load
 .require.i.load:{[lib]
-    .log.info "Loading library: ",string lib;
+    .log.if.info "Loading library: ",string lib;
 
     libFiles:.require.i.findFiles[lib;.require.location.discovered];
 
     if[0~count libFiles;
-        .log.error "No files found for library [ Lib: ",string[lib]," ]";
+        .log.if.error "No files found for library [ Lib: ",string[lib]," ]";
         '"LibraryDoesNotExistException (",string[lib],")";
     ];
 
     {
-        .log.info "Loading ",x;
+        .log.if.info "Loading ",x;
         loadRes:@[system;"l ",x;{ (`LOAD_FAILURE;x) }];
 
         if[`LOAD_FAILURE~first loadRes;
-            .log.error "Library file failed to load! [ File: ",x," ]. Error - ",last loadRes;
+            .log.if.error "Library file failed to load! [ File: ",x," ]. Error - ",last loadRes;
             '"LibraryLoadException";
         ];
     } each 1_/:string libFiles;
@@ -132,7 +145,7 @@
     initF:@[get;initFname;`NO_INIT_FUNC];
 
     if[not `NO_INIT_FUNC~initF;
-        .log.info "Library initialisation function detected [ Func: ",string[initFname]," ]";
+        .log.if.info "Library initialisation function detected [ Func: ",string[initFname]," ]";
 
         / If in debug mode, execute init function without try/catch
         $[`boolean$system"e";
@@ -141,13 +154,13 @@
         ];
 
         if[`INIT_FUNC_ERROR~first initRes;
-            .log.error "Init function (",string[initFname],") failed to execute successfully [ Lib: ",string[lib]," ]. Error - ",last initRes;
+            .log.if.error "Init function (",string[initFname],") failed to execute successfully [ Lib: ",string[lib]," ]. Error - ",last initRes;
             '"LibraryInitFailedException (",string[initFname],")";
         ];
         
         .require.markLibAsInited lib;
 
-        .log.info "Initialised library: ",string lib;
+        .log.if.info "Initialised library: ",string lib;
     ];
  };
 
@@ -180,11 +193,21 @@
     :(not ()~fc) & not folder~fc:key folder;
  };
 
+/ Set the default interface implementations before the Interface library (if) is available
+/  @see .require.interfaces
+.require.i.setDefaultInterfaces:{
+    (set)./: flip (0!.require.interfaces)`ifFunc`implFunc;
+ };
 
-.log.trace:-1;
-.log.debug:-1
-.log.info:-1;
-.log.warn:-1;
-.log.error:-2;
-.log.fatal:-2;
+/ Initialise and defer interface management to the Interface library (if)
+/  @see .require.interfaces
+/  @see .if.setImplementationsFor
+.require.i.initInterfaceLibrary:{
+    .require.libNoInit`if;
 
+    requiredIfs:0!`lib xgroup .require.interfaces;
+
+    { .if.setImplementationsFor[x`lib; flip `lib _ x] } each requiredIfs;
+
+    .require.lib`if;
+ };
