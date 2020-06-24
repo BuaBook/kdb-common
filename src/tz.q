@@ -37,12 +37,12 @@
     .tz.csvSrcPath:` sv searchLoc,.tz.cfg.csvFilename;
 
     if[not .type.isFile .tz.csvSrcPath;
-        .log.error "No Timezone configuration found in expected location [ Path: ",string[.tz.csvSrcPath]," ]";
-        .log.error " Set '.tz.cfg.csvPath' before initialising the library";
+        .log.if.error "No Timezone configuration found in expected location [ Path: ",string[.tz.csvSrcPath]," ]";
+        .log.if.error " Set '.tz.cfg.csvPath' before initialising the library";
         '"NoTzConfigException";
     ];
 
-    .log.info "Initialising Timezone Conversion library [ Source: ",string[.tz.csvSrcPath]," ]";
+    .log.if.info "Initialising Timezone Conversion library [ Source: ",string[.tz.csvSrcPath]," ]";
 
     .tz.i.loadTimezoneCsv[];
  };
@@ -120,7 +120,7 @@
 
     timezones:update `g#timezoneID from `gmtDateTime xasc timezones;
 
-    .log.info "Timezone Conversion configuration loaded [ Timezone Count: ",string[count timezones]," ]";
+    .log.if.info "Timezone Conversion configuration loaded [ Timezone Count: ",string[count timezones]," ]";
 
     .tz.timezones:timezones;
  };

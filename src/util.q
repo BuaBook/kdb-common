@@ -18,8 +18,8 @@
 / Simple wrapper around the system command. Throws an exception if the command fails
 /  @throws SystemCallFailedException If the system command does not complete successfully
 .util.system:{[cmd]
-  .log.debug "Running system command: \"",cmd,"\"";
-  @[system;cmd;{.log.error "System call failed: ",x; '"SystemCallFailedException"}]
+  .log.if.debug "Running system command: \"",cmd,"\"";
+  @[system;cmd;{.log.if.error "System call failed: ",x; '"SystemCallFailedException"}]
  };
 
 / Rounds floats to the specified precision
@@ -172,16 +172,16 @@ k).util.showNoLimit:{
     beforeStats:.Q.w[];
     gcStartTime:.time.now[];
 
-    .log.info "Running garbage collection";
+    .log.if.info "Running garbage collection";
 
     .Q.gc[];
 
     diffStats:beforeStats - .Q.w[];
 
     $[0f = diffStats`heap;
-        .log.info "Garbage collection complete. No memory returned to OS";
+        .log.if.info "Garbage collection complete. No memory returned to OS";
     / else
-        .log.info "Garbage collection complete [ Returned to OS (from heap): ",string[.util.round[2;] %[;1024*1024] diffStats`heap]," MB ] [ Time: ",string[.time.now[] - gcStartTime]," ]"
+        .log.if.info "Garbage collection complete [ Returned to OS (from heap): ",string[.util.round[2;] %[;1024*1024] diffStats`heap]," MB ] [ Time: ",string[.time.now[] - gcStartTime]," ]"
     ];
 
     :diffStats;
