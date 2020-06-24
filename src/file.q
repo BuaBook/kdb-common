@@ -61,7 +61,7 @@
 /  @returns (FolderPath) The supplied folder to check
 .file.ensureDir:{[dir]
     if[not .type.isFolder dir;
-        .log.info "Directory does not exist, creating [ Directory: ",string[dir]," ]";
+        .log.if.info "Directory does not exist, creating [ Directory: ",string[dir]," ]";
         .os.run[`mkdir;.convert.hsymToString dir];
     ];
 

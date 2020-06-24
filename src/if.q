@@ -75,7 +75,7 @@
 /  @throws ImplementationFunctionDoesNotExistException If the implementation function is a reference but doesn't exist
 /  @throws InvalidImplementationFunctionException If the implementation function is a reference to something that isn't a function
 .if.i.bindFunction:{[ifFunc; implFunc; overwrite]
-    if[not 1 = count key ifFunc;
+    if[not 0 = count key ifFunc;
         if[not overwrite;
             .if.i.log[`info;] "Interface: Not overwriting existing implementation for interface [ Interface: ",string[ifFunc]," ]";
             :(::);

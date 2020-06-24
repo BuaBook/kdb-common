@@ -17,7 +17,7 @@
 
 .terminal.init:{
     if[.terminal.cfg.trackSizeChange & .terminal.isInteractive[];
-        .log.info "Enabling terminal size change tracking on interactive terminal";
+        .log.if.info "Enabling terminal size change tracking on interactive terminal";
         .terminal.i.enableSizeTracking[];
     ];
  };
@@ -36,7 +36,7 @@
         :(::);
     ];
 
-    .log.trace "Console size change [ Old: ",.Q.s1[oldTermSize]," ] [ New: ",termSize," ]";
+    .log.if.trace "Console size change [ Old: ",.Q.s1[oldTermSize]," ] [ New: ",termSize," ]";
 
     system "c ",termSize;
  };
@@ -50,7 +50,7 @@
 
     interactive:.os.isInteractiveSession[];
 
-    .log.info "Current kdb process terminal state [ Interactive: ",string[`no`yes interactive]," ]";
+    .log.if.info "Current kdb process terminal state [ Interactive: ",string[`no`yes interactive]," ]";
     :interactive;
  };
 
@@ -62,7 +62,7 @@
     dotZdotPi:.terminal.cfg.defaultZPi;
 
     if[.ns.isSet `.z.pi;
-        .log.debug "Overloading existing .z.pi handler set for terminal size tracking";
+        .log.if.debug "Overloading existing .z.pi handler set for terminal size tracking";
         dotZdotPi:.z.pi;
     ];
 

@@ -62,7 +62,7 @@
 
 .http.init:{
     if[.http.cfg.cacheProxy;
-        .log.info "Querying environment variables for HTTP / HTTPS proxy settings";
+        .log.if.info "Querying environment variables for HTTP / HTTPS proxy settings";
         .http.proxy:.http.i.getProxyConfig[];
     ];
 
@@ -71,11 +71,11 @@
             .http.userAgent:"-" sv string `kdbplus,.z.K,.z.k,.z.i;
         ];
 
-        .log.info "Send user agent with HTTP requests enabled [ User Agent: ",.http.userAgent," ]";
+        .log.if.info "Send user agent with HTTP requests enabled [ User Agent: ",.http.userAgent," ]";
     ];
 
     .http.gzAvailable:.ns.isSet `.Q.gz;
-    .log.info "HTTP compression with GZIP [ Available: ",string[`no`yes .http.gzAvailable]," ]";
+    .log.if.info "HTTP compression with GZIP [ Available: ",string[`no`yes .http.gzAvailable]," ]";
  };
 
 
@@ -154,7 +154,7 @@
         location:response[`headers] key[response`headers] first where `location = lower key response`headers;
 
         if[0 < count location;
-            .log.info "Following HTTP redirect as configured [ Original URL: ",url," ] [ New URL: ",location," ]";
+            .log.if.info "Following HTTP redirect as configured [ Original URL: ",url," ] [ New URL: ",location," ]";
             response:.http.send[method; location; body; contentType; headers];
         ];
     ];
@@ -188,7 +188,7 @@
         urlArgs:"=" vs/: "&" vs urlArgs;
 
         if[not all 2 = count each urlArgs;
-            .log.error "URL query string is invalid, must be ampersand separated 'key=value' pairs [ URL: ",urlParts[`path]," ]";
+            .log.if.error "URL query string is invalid, must be ampersand separated 'key=value' pairs [ URL: ",urlParts[`path]," ]";
             '"InvalidUrlQueryStringException";
         ];
 
@@ -269,24 +269,24 @@
 .http.i.send:{[urlParts; requestStr]
     if[any urlParts[`scheme] like/: string[.http.cfg.tlsSchemes],\:"://";
         if[not .util.isTlsAvailable[];
-            .log.error "Cannot open TLS-based connection as TLS is not available in the current process";
+            .log.if.error "Cannot open TLS-based connection as TLS is not available in the current process";
             '"TlsNotAvailableException";
         ];
     ];
 
     urlForLog:.http.i.urlForLog urlParts;
 
-    .log.info "Sending HTTP request [ URL: ",urlForLog," ] [ Via Proxy: ",string[`no`yes urlParts`proxy]," ]";
-    .log.trace "HTTP request:\n",requestStr;
+    .log.if.info "Sending HTTP request [ URL: ",urlForLog," ] [ Via Proxy: ",string[`no`yes urlParts`proxy]," ]";
+    .log.if.trace "HTTP request:\n",requestStr;
 
     httpResp:@[urlParts`hp; requestStr; { (`HTTP_REQUEST_FAIL; x) }];
 
     if[`HTTP_REQUEST_FAIL ~ first httpResp;
-        .log.error "Failed to connect to HTTP endpoint [ URL: ",urlForLog," ]. Error - ",last httpResp;
+        .log.if.error "Failed to connect to HTTP endpoint [ URL: ",urlForLog," ]. Error - ",last httpResp;
         '"HttpConnectionFailedException";
     ];
 
-    .log.info "HTTP request returned OK [ URL: ",urlForLog," ]";
+    .log.if.info "HTTP request returned OK [ URL: ",urlForLog," ]";
 
     :httpResp;
  };
@@ -344,16 +344,16 @@
     proxyHp:.http.proxy `$urlParts`scheme;
 
     if["" ~ proxyHp;
-        .log.trace "HTTP access request will route direct (no proxy config) [ Base URL: ",urlParts[`baseUrl]," ]";
+        .log.if.trace "HTTP access request will route direct (no proxy config) [ Base URL: ",urlParts[`baseUrl]," ]";
         :`proxy`hp!(0b; `$":",raze urlParts`scheme`baseUrl);
     ];
 
     if[urlParts[`baseUrl] in .http.proxy`bypass;
-        .log.trace "HTTP access request will bypass proxy due to 'NO_PROXY' match [ Base URL: ",urlParts[`baseUrl]," ]";
+        .log.if.trace "HTTP access request will bypass proxy due to 'NO_PROXY' match [ Base URL: ",urlParts[`baseUrl]," ]";
         :`proxy`hp!(0b; `$":",raze urlParts`scheme`baseUrl);
     ];
 
-    .log.trace "HTTP access request will route via proxy [ Base URL: ",urlParts[`baseUrl]," ] [ Proxy: ",proxyHp," ]";
+    .log.if.trace "HTTP access request will route via proxy [ Base URL: ",urlParts[`baseUrl]," ] [ Proxy: ",proxyHp," ]";
     :`proxy`hp!(1b; `$":",proxyHp);
  };
 
@@ -397,7 +397,7 @@
         ];
 
         if[not[.http.gzAvailable] | not "gzip" ~ ppHeaders`contentEncoding;
-            .log.error "Invalid content encoding in HTTP response [ Specified: ",ppHeaders[`contentEncoding]," ] [ Supported: ",string[`none`gzip .http.gzAvailable]," ]";
+            .log.if.error "Invalid content encoding in HTTP response [ Specified: ",ppHeaders[`contentEncoding]," ] [ Supported: ",string[`none`gzip .http.gzAvailable]," ]";
 
             if[.http.cfg.errorOnInvaildContentEncoding;
                 '"InvalidContentEncodingException";

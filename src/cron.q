@@ -37,7 +37,7 @@
 / NOTE: The initialistion function will not overwrite .z.ts if it is already set.
 .cron.init:{
     if[.ns.isSet `.z.ts;
-        .log.warn "Timer function is already set. Cron will not override automatically";
+        .log.if.warn "Timer function is already set. Cron will not override automatically";
         :(::);
     ];
 
@@ -56,7 +56,7 @@
         :(::);
     ];
 
-    .log.info "Enabling cron job scheduler [ Timer Interval: ",string[.cron.cfg.timerInterval]," ms ]";
+    .log.if.info "Enabling cron job scheduler [ Timer Interval: ",string[.cron.cfg.timerInterval]," ms ]";
 
     .util.system "t ",string .cron.cfg.timerInterval;
   };
@@ -67,8 +67,8 @@
         :(::);
     ];
 
-    .log.info "Disabling cron job scheduler";
-    .log.warn " No scheduled jobs will be executed until cron is enabled again";
+    .log.if.info "Disabling cron job scheduler";
+    .log.if.warn " No scheduled jobs will be executed until cron is enabled again";
 
     .util.system "t 0";
  };
@@ -88,32 +88,32 @@
 /  @throws InvalidCronJobTimeException If the start time specified is before the current time or the end time is before the start time
 .cron.add:{[func;args;runType;startTime;endTime;interval]
     if[not .ns.isSet func;
-        .log.error "Function to add to cron does not exist [ Function: ",string[func]," ]";
+        .log.if.error "Function to add to cron does not exist [ Function: ",string[func]," ]";
         '"FunctionDoesNotExistFunction";
     ];
 
     if[not .type.isFunction get func;
-        .log.error "Symbol reference for cron job is not a function [ Reference: ",string[func]," ]";
+        .log.if.error "Symbol reference for cron job is not a function [ Reference: ",string[func]," ]";
         '"ReferenceIsNotAFunctionException";
     ];
 
     if[not runType in key .cron.cfg.runners;
-        .log.error "Invalid cron run type. Expecting one of: ",.convert.listToString key .cron.cfg.runners;
+        .log.if.error "Invalid cron run type. Expecting one of: ",.convert.listToString key .cron.cfg.runners;
         '"InvalidCronRunTypeException";
     ];
 
     if[startTime < .time.today[]+`second$.time.nowAsTime[];
-        .log.error "Cron job start time is in the past. Cannot add job";
+        .log.if.error "Cron job start time is in the past. Cannot add job";
         '"InvalidCronJobTimeException";
     ];
 
     if[not[.util.isEmpty endTime] & endTime < startTime;
-        .log.error "Cron job end time specified is before the start time. Cannot add job";
+        .log.if.error "Cron job end time specified is before the start time. Cannot add job";
         '"InvalidCronJobTimeException";
     ];
     
     if[not[.util.isEmpty interval] & .cron.cfg.timerInterval > .convert.timespanToMs interval;
-        .log.error "Cron job repeat interval is shorter than the cron timer interval. Cannot add job";
+        .log.if.error "Cron job repeat interval is shorter than the cron timer interval. Cannot add job";
         '"InvalidCronJobIntervalException";
     ];
 
@@ -200,7 +200,7 @@
     jobDetails:.cron.jobs jobId;
 
     if[.type.isInfinite jobDetails`nextRunTime;
-        .log.debug "Job has been self-cancelled. Will not reschedule [ Job: ",string[jobId]," ]";
+        .log.if.debug "Job has been self-cancelled. Will not reschedule [ Job: ",string[jobId]," ]";
         :status;
     ];
 
@@ -231,7 +231,7 @@
     status:1b;
 
     if[.ns.const.pExecFailure ~ first result;
-        .log.error "Cron job failed to execute [ Job ID: ",string[jobId]," ]. Error - ",last result;
+        .log.if.error "Cron job failed to execute [ Job ID: ",string[jobId]," ]. Error - ",last result;
         status:0b;
 
         result:(`errorMsg`backtrace inter key result)#result;

@@ -17,7 +17,7 @@
     '"IllegalArgumentException";
   ];
 
-  .log.info"Loading CSV file ",.convert.hsymToString path;
+  .log.if.info"Loading CSV file ",.convert.hsymToString path;
 
   :.csv.parse[types;read0 path];
  };
@@ -60,7 +60,7 @@
         '"UnsupportedColumnTypeException (",.convert.listToString[where unsupported],")";
     ];
 
-    .log.info "Saving CSV file [ Target: ",string[path]," ] [ Table Length: ",string[count data]," ]";
+    .log.if.info "Saving CSV file [ Target: ",string[path]," ] [ Table Length: ",string[count data]," ]";
 
     :path 0: "," 0: data;
  };

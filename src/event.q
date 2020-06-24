@@ -45,18 +45,18 @@
     listeners:.event.handlers event;
 
     if[0=count listeners;
-        .log.debug "Event fired but no listeners [ Event: ",string[event]," ] [ Args: ",.Q.s1[args]," ]";
+        .log.if.debug "Event fired but no listeners [ Event: ",string[event]," ] [ Args: ",.Q.s1[args]," ]";
         :(::);
     ];
 
-    .log.debug "Notifying listeners of event [ Event: ",string[event]," ] [ Args: ",.Q.s1[args]," ]";
+    .log.if.debug "Notifying listeners of event [ Event: ",string[event]," ] [ Args: ",.Q.s1[args]," ]";
 
     listenRes:listeners!.ns.protectedExecute[;args] each listeners;
     listenErr:where .ns.const.pExecFailure~/:first each listenRes;
 
     if[0 < count listenErr;
-        .log.warn "One or more listeners failed to execute successfully [ Event: ",string[event]," ] [ Errored: ",.convert.listToString[listenErr]," ]";
-        .log.warn "Listener exception detail:\n",.Q.s listenErr#last each listenRes;
+        .log.if.warn "One or more listeners failed to execute successfully [ Event: ",string[event]," ] [ Errored: ",.convert.listToString[listenErr]," ]";
+        .log.if.warn "Listener exception detail:\n",.Q.s listenErr#last each listenRes;
         :(::);
     ];
  };
@@ -76,17 +76,17 @@
     ];
 
     if[not event in key .event.handlers;
-        .log.info "New event type to be added for management [ Event: ",string[event]," ]";
+        .log.if.info "New event type to be added for management [ Event: ",string[event]," ]";
     ];
 
     if[listenFunction in .event.handlers event;
-        .log.debug "Listener already added for event. Will not re-add [ Event: ",string[event]," ] [ Listener: ",string[listenFunction]," ]";
+        .log.if.debug "Listener already added for event. Will not re-add [ Event: ",string[event]," ] [ Listener: ",string[listenFunction]," ]";
         :(::);
     ];
 
     .event.handlers[event],:listenFunction;
 
-    .log.info "New listener added for event [ Event: ",string[event]," ] [ Listener: ",string[listenFunction]," ]";
+    .log.if.info "New listener added for event [ Event: ",string[event]," ] [ Listener: ",string[listenFunction]," ]";
  };
 
 / Removes the listener from the specified event
@@ -103,7 +103,7 @@
 
     .event.handlers[event]:.event.handlers[event] except listenFunction;
 
-    .log.info "Removed listener from event [ Event: ",string[event]," ] [ Listener: ",string[listenFunction]," ]";
+    .log.if.info "Removed listener from event [ Event: ",string[event]," ] [ Listener: ",string[listenFunction]," ]";
  };
 
 / Binds an event to a specific function so the event management library can be used with it. This is generally
@@ -113,7 +113,7 @@
 /  @param bindFunction (Symbol) Reference to the function that should be set
 .event.installHandler:{[event;bindFunction]
     if[.ns.isSet bindFunction;
-        .log.warn "Function to bind event management to is already set. Will not override [ Function: ",string[bindFunction]," ]";
+        .log.if.warn "Function to bind event management to is already set. Will not override [ Function: ",string[bindFunction]," ]";
         :(::);
     ];
 
@@ -123,12 +123,12 @@
         .event.handlers[event]:`symbol$();
     ];
 
-    .log.info "Event management now enabled [ Event: ",string[event]," ] [ Bound To: ",string[bindFunction]," ]";
+    .log.if.info "Event management now enabled [ Event: ",string[event]," ] [ Bound To: ",string[bindFunction]," ]";
  };
 
 .event.i.defaultExitHandler:{[ec]
     $[0=ec;
-        .log.info "Process is exiting at ",string[.time.now[]]," [ Exit Code: ",string[ec]," ]";
-        .log.fatal "Process is exiting at ",string[.time.now[]]," with non-zero exit code [ Exit Code: ",string[ec]," ]"
+        .log.if.info "Process is exiting at ",string[.time.now[]]," [ Exit Code: ",string[ec]," ]";
+        .log.if.fatal "Process is exiting at ",string[.time.now[]]," with non-zero exit code [ Exit Code: ",string[ec]," ]"
     ];
  };

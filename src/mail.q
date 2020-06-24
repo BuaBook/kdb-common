@@ -21,7 +21,7 @@
     
     .mail.availableCmds:last each ` vs/:mailCmdFuncs;
 
-    .log.info "Configured mail commands detected [ Commands: ",.convert.listToString[.mail.availableCmds]," ]";
+    .log.if.info "Configured mail commands detected [ Commands: ",.convert.listToString[.mail.availableCmds]," ]";
  };
 
 
@@ -55,17 +55,17 @@
 
     mailStr:.mail.i.send[dict`useMailCmd] dict;    
 
-    .log.info "Sending e-mail [ To: ",.convert.listToString[(),dict`to]," ] [ Subject: ",dict[`subject]," ] [ Mail Cmd: ",string[dict`useMailCmd]," ]";
+    .log.if.info "Sending e-mail [ To: ",.convert.listToString[(),dict`to]," ] [ Subject: ",dict[`subject]," ] [ Mail Cmd: ",string[dict`useMailCmd]," ]";
 
     res:@[.util.system;mailStr;{ (`MAIL_CMD_FAILED;x) }];
 
     if[`MAIL_CMD_FAILED~first res;
-        .log.error "Failed to send e-mail [ To: ",.convert.listToString[(),dict`to]," ] [ Subject: ",dict[`subject]," ] [ Mail Cmd: ",string[dict`useMailCmd]," ]. Error - ",last res;
+        .log.if.error "Failed to send e-mail [ To: ",.convert.listToString[(),dict`to]," ] [ Subject: ",dict[`subject]," ] [ Mail Cmd: ",string[dict`useMailCmd]," ]. Error - ",last res;
         '"EmailSendFailedException";
     ];
 
     if[(not .util.isEmpty dict`attachments) & dict`deleteAttachments;
-        .log.info "Deleting attachments after successful send as requested [ Attachments: ",.convert.listToString[dict`attachments]," ]";
+        .log.if.info "Deleting attachments after successful send as requested [ Attachments: ",.convert.listToString[dict`attachments]," ]";
         .os.run[`rm;] each 1_/:string (),dict`attachments;
     ];
 
@@ -105,7 +105,7 @@
         attach:(),dict`attachments;
 
         if[any " " in/:string attach;
-            .log.error "Attachment file path contains a space, which is not supported";
+            .log.if.error "Attachment file path contains a space, which is not supported";
             '"InvalidEmailAttachmentPathException";
         ];
 
@@ -150,7 +150,7 @@
         attach:(),dict`attachments;
 
         if[any " " in/:string attach;
-            .log.error "Attachment file path contains a space, which is not supported";
+            .log.if.error "Attachment file path contains a space, which is not supported";
             '"InvalidEmailAttachmentPathException";
         ];
 

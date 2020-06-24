@@ -37,19 +37,19 @@
     ];
 
     if[not .ns.isSet `.z.ws;
-        .log.error "'.z.ws' handler function must be set prior to opening any outbound WebSocket";
+        .log.if.error "'.z.ws' handler function must be set prior to opening any outbound WebSocket";
         '"ZWsHandlerNotSetException";
     ];
 
     schemePrefixes:string[.wsc.cfg.validUrlSchemes],\:"://*";
 
     if[not any url like/: schemePrefixes;
-        .log.error "Invalid URL scheme specified. Must be one of: ",", " sv schemePrefixes;
+        .log.if.error "Invalid URL scheme specified. Must be one of: ",", " sv schemePrefixes;
         '"InvalidWebSocketUrlException";
     ];
 
 
-    .log.info "Attempting to connect to ",url," via WebSocket";
+    .log.if.info "Attempting to connect to ",url," via WebSocket";
 
     urlParts:.http.i.getUrlDetails url;
 
@@ -57,12 +57,12 @@
     handle:first wsResp;
 
     if[null handle;
-        .log.error "Failed to connect to ",url," via WebSocket. Error: ",last wsResp;
+        .log.if.error "Failed to connect to ",url," via WebSocket. Error: ",last wsResp;
         '"WebSocketConnectionFailedException";
     ];
 
-    .log.info "Connected to ",url," via WebSocket [ Handle: ",string[handle]," ]";
-    .log.debug "WebSocket response:\n",last wsResp;
+    .log.if.info "Connected to ",url," via WebSocket [ Handle: ",string[handle]," ]";
+    .log.if.debug "WebSocket response:\n",last wsResp;
 
     if[.wsc.cfg.logToIpc;
         `.ipc.outbound upsert (handle; `$raze urlParts`scheme`baseUrl`path; .time.now[]);

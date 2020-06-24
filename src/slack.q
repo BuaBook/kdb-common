@@ -28,13 +28,13 @@
 
     slackWebhookDict:`text`username!(messageBody; username);
 
-    .log.info  "Sending Slack notification [ Username: ",username," ] [ Message: ",.Q.s1[slackWebhookDict]," ]";
-    .log.debug " [ Slack Hook URL: ",slackHookUrl," ]";
+    .log.if.info  "Sending Slack notification [ Username: ",username," ] [ Message: ",.Q.s1[slackWebhookDict]," ]";
+    .log.if.debug " [ Slack Hook URL: ",slackHookUrl," ]";
 
     slackPostResult:.ns.protectedExecute[`.Q.hp; (slackHookUrl; "application/json"; .j.j slackWebhookDict)];
 
     if[.ns.const.pExecFailure ~ first slackPostResult;
-        .log.warn "Failed to send Slack notification [ Username: ",username," ] [ Slack Hook URL: ",slackHookUrl," ]. Error - ",last slackPostResult;
+        .log.if.warn "Failed to send Slack notification [ Username: ",username," ] [ Slack Hook URL: ",slackHookUrl," ]. Error - ",last slackPostResult;
         :0b;
     ];
 

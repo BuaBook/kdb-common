@@ -92,16 +92,16 @@
         ];
     ];
 
-    .log.info "Attempting to connect to ",logHostPort," (timeout ",string[timeout]," ms)";
+    .log.if.info "Attempting to connect to ",logHostPort," (timeout ",string[timeout]," ms)";
 
     h:@[hopen; (hostPort; timeout); { (`CONN_FAIL;x) }];
 
     if[`CONN_FAIL~first h;
-        .log.error "Failed to connect to ",logHostPort,". Error - ",last h;
+        .log.if.error "Failed to connect to ",logHostPort,". Error - ",last h;
         '"ConnectionFailedException (",logHostPort,")";
     ];
 
-    .log.info "Successfully connected to ",logHostPort," on handle ",string h;
+    .log.if.info "Successfully connected to ",logHostPort," on handle ",string h;
 
     `.ipc.outbound upsert (h; `$logHostPort; .time.now[]);
 
@@ -118,7 +118,7 @@
     .ipc.i.connectionClosed h;
     
     if[`FAILED_TO_CLOSE~first closeRes;
-        .log.warn "Failed to close handle ",string[h],". Error - ",last closeRes;
+        .log.if.warn "Failed to close handle ",string[h],". Error - ",last closeRes;
         :0b;
     ];
 
@@ -130,7 +130,7 @@
 /  @see .ipc.i.handleOpen
 /  @see .ipc.i.connectionClosed
 .ipc.i.enableInboundConnTracking:{
-    .log.info "Enabling inbound connection tracking";
+    .log.if.info "Enabling inbound connection tracking";
 
     / Optional dependency if inbound connection tracking required. Otherwise event is not loaded
     .require.lib`event;
@@ -160,7 +160,7 @@
     sourceIp:.convert.ipOctalToSymbol .z.a;
     user:`unknown^.z.u;
 
-    .log.info "New inbound ",string[connectType]," connection on handle ",string[h]," [ IP Address: ",string[sourceIp]," ] [ User: ",string[user]," ]";
+    .log.if.info "New inbound ",string[connectType]," connection on handle ",string[h]," [ IP Address: ",string[sourceIp]," ] [ User: ",string[user]," ]";
 
     `.ipc.inbound upsert (h;sourceIp;user;.time.now[];connectType);
  };
@@ -172,12 +172,12 @@
 .ipc.i.connectionClosed:{[h]
     if[h in key .ipc.inbound;
         hDetail:.ipc.inbound h;
-        .log.info "Inbound connection on handle ",string[h]," closed [ IP Address: ",string[hDetail`sourceIp]," ] [ User: ",string[hDetail`user]," ]";
+        .log.if.info "Inbound connection on handle ",string[h]," closed [ IP Address: ",string[hDetail`sourceIp]," ] [ User: ",string[hDetail`user]," ]";
         delete from `.ipc.inbound where handle = h;
     ];
 
     if[h in key .ipc.outbound;
-        .log.info "Outbound connection on handle ",string[h]," closed";
+        .log.if.info "Outbound connection on handle ",string[h]," closed";
         delete from `.ipc.outbound where handle = h;
     ];
  };

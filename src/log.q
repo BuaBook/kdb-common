@@ -1,5 +1,5 @@
 // Logging Library
-// Copyright (c) 2015 - 2017 Sport Trades Ltd
+// Copyright (c) 2015 - 2017 Sport Trades Ltd, 2020 Jaskirat Rajasansir
 
 // Documentation: https://github.com/BuaBook/kdb-common/wiki/log.q
 
@@ -95,9 +95,13 @@
     disabled:0!logLevel # .log.levels;
 
     @[`.log; lower enabled`level ; :; .log.msg ./: flip (0!enabled)`fd`level];
-    @[`.log; lower disabled`level; :; count[disabled]#(::)];
+    @[`.log; lower disabled`level; :; count[disabled]#{}];
 
     .log.level:newLevel;
+
+    if[`if in key .require.loadedLibs;
+        .log.i.setInterfaceImplementations[];
+    ];
 
     -1 "\nLogging enabled [ Level: ",string[.log.level]," ] [ Current Logger: `",string[.log.currentLogger]," ]\n";
  };
@@ -150,4 +154,16 @@
 .log.loggers.json:{[fd;lvl;message]
     logElems:`date`time`level`processId`user`handle`message!(.time.today[];.time.nowAsTime[];lvl;.log.process;`system^.z.u;.z.w;message);
     fd .j.j logElems;
+ };
+
+.log.i.setInterfaceImplementations:{
+    allLevels:lower exec level from .log.levels;
+
+    ifFuncs:` sv/: `.log`if,/:allLevels;
+    implFuncs:` sv/:`.log,/:allLevels;
+
+    ifTable:flip `ifFunc`implFunc!(ifFuncs; implFuncs);
+
+    .if.setImplementationsFor[`log; ifTable];
+    .if.bindInterfacesFor[`log; 1b];
  };
