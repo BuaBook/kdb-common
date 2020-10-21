@@ -123,7 +123,7 @@
 
 / @returns (Symbol) A symbol version of the input
 .type.ensureSymbol:{
-    if[.type.isSymbol x;
+    if[.type.isSymbol[x] | .type.isSymbolList x;
         :x;
     ];
 
