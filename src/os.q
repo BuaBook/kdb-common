@@ -270,3 +270,99 @@
 .os.l.isInteractive:{
     :"tty --quiet; echo $?";
  };
+
+
+// Mac OSX Implementation
+.os.m.mkdir:{
+    :"mkdir -p ",x;
+ };
+
+.os.m.rmdir:{
+    :"rmdir ",x;
+ };
+
+.os.m.pwd:{
+    :"pwd";
+ };
+
+.os.m.rm:{
+    :"rm -v ",x;
+ };
+
+.os.m.rmF:{
+    :"rm -vf ",x;
+ };
+
+.os.m.pidCheck:{
+    :"kill -n 0 ",x," 2>/dev/null; echo $?";
+ };
+
+.os.m.sigint:{
+    :"kill -s INT ",x;
+ };
+
+.os.m.sigterm:{
+    :"kill -s TERM ",x;
+ };
+
+.os.m.sigkill:{
+    :"kill -s KILL ",x;
+ };
+
+.os.m.sleep:{
+    :"sleep ",x;
+ };
+
+/ ln requires 2 arguments so pass string separated by "|"
+/ First argument should be the target, 2nd argument should be the source
+.os.m.ln:{
+    args:"|" vs x;
+    :"ln -s ",args[1]," ",args 0;
+ };
+
+/ mv requires 2 arguments so pass string separated by "|"
+/ First argument should be the source, 2nd argument should be the target
+.os.m.mv:{
+    args:"|" vs x;
+    :"mv ",args[0]," ",args 1;
+ };
+
+.os.m.rmFolder:{
+    :"rm -rvf ",x;
+ };
+
+.os.m.tail:{
+    :"tail -n 30 ",x;
+ };
+
+.os.m.safeRmFolder:{
+    :"rmdir ",x;
+ };
+
+.os.m.procCount:{
+    :"getconf  _NPROCESSORS_ONLN";
+ };
+
+.os.m.which:{
+    :"which ",x;
+ };
+
+.os.m.ver:{
+    :"sw_vers";
+ };
+
+/ cp requires 2 arguments so pass string separated by "|"
+/ First argument should be the source, 2nd argument should be the target
+.os.m.cpFolder:{
+    args:"|" vs x;
+    :"cp -rv ",args[0]," ",args 1;
+ };
+
+.os.m.terminalSize:{
+    :"stty size";
+ };
+
+/  'tty' exits 0 if there is a TTY attached, 1 otherwise
+.os.m.isInteractive:{
+    :"test -t 0; echo $?";
+ };
