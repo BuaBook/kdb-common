@@ -38,10 +38,3 @@ Logging enabled [ Level: INFO ]
 2017.03.07 10:47:30.381 INFO pid-6644 jasra_000 0 Initialised library: `log
 q)
 ```
-
-### Contributors
-
-The list of all contributors to the project:
-
-* Jas Rajasansir ([jasraj](https://github.com/jasraj)) (active)
-* Kieran Lucid
