@@ -21,12 +21,13 @@
 
 / Required interface implementations for 'require' and related kdb-common libraries to function correctly
 .require.interfaces:`lib`ifFunc xkey flip `lib`ifFunc`implFunc!"SS*"$\:();
-.require.interfaces[`log`.log.if.trace]:{ -1 x };
-.require.interfaces[`log`.log.if.debug]:{ -1 x };
-.require.interfaces[`log`.log.if.info]: { -1 x };
-.require.interfaces[`log`.log.if.warn]: { -1 x };
-.require.interfaces[`log`.log.if.error]:{ -2 x };
-.require.interfaces[`log`.log.if.fatal]:{ -2 x };
+.require.interfaces[``]:(::);
+.require.interfaces[`log`.log.if.trace]:-1;
+.require.interfaces[`log`.log.if.debug]:-1;
+.require.interfaces[`log`.log.if.info]: -1;
+.require.interfaces[`log`.log.if.warn]: -1;
+.require.interfaces[`log`.log.if.error]:-2;
+.require.interfaces[`log`.log.if.fatal]:-2;
 
 
 .require.init:{[root]
@@ -196,7 +197,9 @@
 / Set the default interface implementations before the Interface library (if) is available
 /  @see .require.interfaces
 .require.i.setDefaultInterfaces:{
-    (set)./: flip (0!.require.interfaces)`ifFunc`implFunc;
+    interfaces:0!delete from .require.interfaces where null[lib] | null ifFunc;
+
+    (set)./: flip interfaces`ifFunc`implFunc;
  };
 
 / Initialise and defer interface management to the Interface library (if)
