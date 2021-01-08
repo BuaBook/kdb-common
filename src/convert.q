@@ -55,6 +55,18 @@
     :(raze/) .type.ensureString@/:list;
  };
 
+/ Converts bytes into it's equivalent as a long integer. Any byte lists shorter than 8 will be padded appropriately
+/  @param bytes (Byte|ByteList) The bytes to convert into a long
+/  @returns (Long) The bytes as a long
+/  @throws TooManyBytesException If the byte list provided is longer than 8 (too big to represent in a long)
+.convert.bytesToLong:{[bytes]
+    if[8 < count bytes;
+        '"TooManyBytesException";
+    ];
+
+    :0x0 sv ((0|8 - count bytes)#0x00),bytes;
+ };
+
 / Converts a kdb table into a HTML <table> representation of it
 /  @param tbl (Table) A table with all values of the table convertable to string by '.type.ensureString'
 /  @returns (String) A HTML version of the table
