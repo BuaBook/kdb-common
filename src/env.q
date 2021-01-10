@@ -69,7 +69,6 @@
     .env.cache[envVar]:envVal;
  };
 
-
 / Parses a '$PATH'-type environment variable into a list of folder paths for use within kdb+
 / NOTE: Only valid folders will be returned from this function
 /  @param rawPath (String) The environment variable output
