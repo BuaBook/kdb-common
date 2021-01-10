@@ -5,13 +5,35 @@
 
 .require.lib each `util`type;
 
+
+/ The separator characters for PATH-type environment variables in all configured OSs
+.os.cfg.envPathSeparator:(`symbol$())!`char$();
+.os.cfg.envPathSeparator[`l`v`m]:":";
+.os.cfg.envPathSeparator[`w]:";";
+
+/ The PATH-type environment variable for shared object / DLL loading for all configured OSs
+.os.cfg.sharedObjectEnvVar:(`symbol$())!`symbol$();
+.os.cfg.sharedObjectEnvVar[`l`v]:`LD_LIBRARY_PATH;
+.os.cfg.sharedObjectEnvVar[`m]:`DYLD_LIBRARY_PATH;
+.os.cfg.sharedObjectEnvVar[`w]:`PATH;
+
+
 / The current operating system, independent of architecture
 /  @see .os.i.getOsType
 .os.type:`;
 
+/ The separator character for PATH-type environment variables in the current OS
+.os.envPathSeparator:" ";
+
+/ The environment variable containing the PATH-type environment variable for shared object / DLL loading
+.os.sharedObjectEnvVar:`;
+
 
 .os.init:{
     .os.type:.os.i.getOsType[];
+
+    .os.envPathSeparator:.os.cfg.envPathSeparator .os.type;
+    .os.sharedObjectEnvVar:.os.cfg.sharedObjectEnvVar .os.type;
  };
 
 / Runs the specified command with the specified parameters. NOTE: That not
