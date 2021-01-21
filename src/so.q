@@ -1,6 +1,8 @@
 // Shared Object Function Manager
 // Copyright (c) 2020 - 2021 Jaskirat Rajasansir
 
+// Documentation: https://github.com/BuaBook/kdb-common/wiki/so.q
+
 .require.lib each `type`file`time`ns`os`env;
 
 
