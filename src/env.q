@@ -1,6 +1,8 @@
 // Environemnt Variable Manager
 // Copyright (c) 2020 - 2021 Jaskirat Rajasansir
 
+// Documentation: https://github.com/BuaBook/kdb-common/wiki/env.q
+
 .require.lib each `type`convert`os;
 
 
