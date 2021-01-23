@@ -83,6 +83,10 @@
     :type[x] within 20 76h;
  };
 
+.type.isAnymap:{
+    :77h = type x;
+ };
+
 .type.isInfinite:{
     :x in .type.const.infinites;
  };
