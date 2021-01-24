@@ -121,6 +121,14 @@
     :type[x] in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19h;
  };
 
+.type.isTypedList:{
+    :type[x] in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19h;
+ };
+
+.type.isGenericList:{
+    :0h = type x;
+ };
+
 .type.isDistinct:{
     :x~distinct x;
  };
@@ -141,15 +149,15 @@
 
 / @returns (String) A string version of the input
 .type.ensureString:{
-    if[.type.isString x;
+    $[.type.isString x;
         :x;
-    ];
-
-    if[.type.isDict[x] | .type.isTable x;
+    .type.isDict[x] | .type.isTable[x] | .type.isGenericList x;
         :.Q.s1 x;
+    .type.isTypedList x;
+        :", " sv .type.ensureString each x;
+    / else
+        :string x
     ];
-
-    :string x;
  };
 
 / @returns (HostPort) A valid host/port connection symbol, converting a port only input as appropriate

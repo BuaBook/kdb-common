@@ -44,15 +44,16 @@
     :`$"." sv string "h"$0x0 vs ipO;
  };
 
-/ @returns (String) The specified list as a string separated by commas. Useful for logging
+/  @param list (List) List to separate by commas. List should not contain nested lists, dictionaries or tables
+/  @returns (String) The specified list as a string separated by commas. Useful for logging
 .convert.listToString:{[list]
-    :", " sv .type.ensureString list;
+    :", " sv string list;
  };
 
 / A more general version of '.convert.listToString' to ensure all elements of the specified list are string-ed
-/  @returns (String) The specified list as a single string. NOTE: There is no separator between list elements
+/  @returns (String) The specified list as a single string.
 .convert.genericListToString:{[list]
-    :(raze/) .type.ensureString@/:list;
+    :" | " sv .type.ensureString each list;
  };
 
 / Converts bytes into it's equivalent as a long integer. Any byte lists shorter than 8 will be padded appropriately
@@ -80,13 +81,6 @@
 
     if[.type.isKeyedTable tbl;
         tbl:0!tbl;
-    ];
-
-    badColumns:where .type.isMixedList each .Q.V tbl;
-    badColumns:badColumns except where .type.isString each badColumns#first tbl;
-
-    if[0 < count badColumns;
-        '"MixedListColumnsNotSupportedException (Columns: ",.convert.listToString[badColumns],")";
     ];
 
     header:.h.htc[`thead;] .h.htc[`tr;] raze .h.htc[`th;] each .type.ensureString each cols tbl;
