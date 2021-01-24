@@ -112,7 +112,7 @@
 / still apply to list-type cells
 /  @see .Q.S
 k).util.showNoLimit:{
-    :`/:$[10h=@r:@[.Q.S[2#0Wi-1;0];x;::];,-3!x;r];
+    :$[(::)~x;"";`/:$[10h=@r:@[.Q.S[2#0Wi-1;0];x;::];,-3!x;r]];
  };
 
 / Modified .Q.s to allow output to be tabbed by the specified number of tabs. Useful for
@@ -123,9 +123,10 @@ k).util.showNoLimit:{
         x:.Q.s x;
     ];
 
+    sep:"\r\n" where "\r\n" in x;
     tabs:raze tabCount#enlist "\t";
 
-    :tabs,("\r\n",tabs) sv "\r\n" vs x;
+    :tabs,(sep,tabs) sv sep vs x;
  };
 
 / NOTE: This function only works for in-memory tables in the root namespace
