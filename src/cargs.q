@@ -6,21 +6,33 @@
 .require.lib`type;
 
 
+/ Cache of the command line arguments once they have been parsed once for improved performance on multiple calls
+.cargs.cache:(`symbol$())!();
+.cargs.cache[`get]:();
+.cargs.cache[`getWithInternal]:();
+
+
 / This function provides additional parsing on top of the standard '.Q.opt' parsing for user-specified command line arguments
 /  @returns (Dict) Argument parameter as keys with the argument values
-/  @see .cargs.i.parse
 /  @see .z.x
 .cargs.get:{
-    :.cargs.i.parse .z.x;
+    if[() ~ .cargs.cache`get;
+        .cargs.cache[`get]:.cargs.i.parse .z.x;
+    ];
+
+    :.cargs.cache`get;
  };
 
 / This function provides addition parsing on top of the standard '.Q.opt' parsing for all command line arguments (including kdb
 / internal single-character arguments
 /  @returns (Dict) Argument parameter as keys with the argument values
-/  @see .cargs.i.parse
 /  @see .z.X
 .cargs.getWithInternal:{
-    :.cargs.i.parse .z.X;
+    if[() ~ .cargs.cache`getWithInternal;
+        .cargs.cache[`getWithInternal]:.cargs.i.parse .z.X;
+    ];
+
+    :.cargs.cache`getWithInternal;
  };
 
 
