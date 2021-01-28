@@ -1,18 +1,18 @@
 // Logging Library
-// Copyright (c) 2015 - 2017 Sport Trades Ltd, 2020 Jaskirat Rajasansir
+// Copyright (c) 2015 - 2017 Sport Trades Ltd, 2020 - 2021 Jaskirat Rajasansir
 
 // Documentation: https://github.com/BuaBook/kdb-common/wiki/log.q
 
-.require.lib each `util`type`time;
+.require.lib each `util`type`time`cargs;
 
 
 / Functions to determine which logger to use. The dictionary key is a symbol reference to the logger function if the
 / value function is true.
 / NOTE: .log.loggers.basic should always be last so it is the fallback if all others are not available
 .log.cfg.loggers:()!();
-.log.cfg.loggers[`.log.loggers.color]: { (not ""~getenv`KDB_COLORS) | `logColors in key .Q.opt .z.x };
-.log.cfg.loggers[`.log.loggers.syslog]:{ (not ""~getenv`KDB_LOG_SYSLOG) | `logSyslog in key .Q.opt .z.x };
-.log.cfg.loggers[`.log.loggers.json]:  { (not ""~getenv`KDB_LOG_JSON) | `logJson in key .Q.opt .z.x };
+.log.cfg.loggers[`.log.loggers.color]: { (not ""~getenv`KDB_COLORS) | `logColors in key .cargs.get[] };
+.log.cfg.loggers[`.log.loggers.syslog]:{ (not ""~getenv`KDB_LOG_SYSLOG) | `logSyslog in key .cargs.get[] };
+.log.cfg.loggers[`.log.loggers.json]:  { (not ""~getenv`KDB_LOG_JSON) | `logJson in key .cargs.get[] };
 .log.cfg.loggers[`.log.loggers.basic]: { 1b };
 
 
@@ -41,8 +41,8 @@
 .log.levels[`FATAL]:(-2i; 2i; "\033[4;31m");
 
 / Process identification
-/  @see .log.init
-.log.process:`;
+/ NOTE: If this is set prior to the library being initialised, it will not be overwritten during '.log.init'
+.log.process:"";
 
 
 .log.init:{
@@ -50,10 +50,14 @@
         .log.level:`DEBUG;
     ];
 
+    if[0 = count .log.process;
+        .log.process:"pid-",string .z.i;
+    ];
+
     / setLogger calls setLevel
     .log.setLogger[];
 
-    .log.process:`$"pid-",string .z.i;
+    .log.i.setInterfaceImplementations[];
  };
 
 
@@ -99,10 +103,6 @@
 
     .log.level:newLevel;
 
-    if[`if in key .require.loadedLibs;
-        .log.i.setInterfaceImplementations[];
-    ];
-
     -1 "\nLogging enabled [ Level: ",string[.log.level]," ] [ Current Logger: `",string[.log.currentLogger]," ]\n";
  };
 
@@ -118,45 +118,57 @@
     :(<=). key[.log.levels]?/: .log.level,level;
  };
 
+/ String log formatter with slf4j-stule parameterised formatting
+/  @returns (StringList) List of log elements in string format
+/  @see http://www.slf4j.org/faq.html#logging_performance
+.log.strFormatter:{[lvl; message]
+    if[0h = type message;
+        message:"" sv ("{}" vs first message),'(.type.ensureString each 1_ message),enlist "";
+    ];
+
+    elems:(.time.today[]; .time.nowAsTime[]; lvl; .log.process; `system^.z.u; .z.w; message);
+    elems:@[elems; where not .type.isString each elems; string];
+
+    :elems;
+ };
+
 
 / Basic logger
 .log.loggers.basic:{[fd;lvl;message]
-    logElems:(.time.today[];.time.nowAsTime[];lvl;.log.process;`system^.z.u;.z.w;message);
-    logElems:@[logElems; where not .type.isString each logElems; string];
-
-    fd " " sv logElems;
+    fd " " sv .log.strFormatter[lvl; message];
  };
 
 / Logger with color highlighting of the level based on the configuration in .log.levels
-/  @see .log.levels
-/  @see .log.resetColor
-/  @see .log.loggers.basic
 .log.loggers.color:{[fd;lvl;message]
     lvl:(.log.levels[lvl]`color),string[lvl],.log.resetColor;
-
-    .log.loggers.basic[fd; lvl; message];
+    fd " " sv .log.strFormatter[lvl; message];
  };
 
 / Non-color logger with the additional syslog priority prefix at the start of the log line. This is useful
 / when capturing log output into systemd (via 'systemd-cat').
-/ NOTE: This function does not defer to '.log.loggers.basic' for logging
-/  @see .log.levels
 .log.loggers.syslog:{[fd;lvl;message]
     syslogLvl:"<",string[.log.levels[lvl]`syslog],">";
-
-    logElems:(syslogLvl;.time.today[];.time.nowAsTime[];lvl;.log.process;`system^.z.u;.z.w;message);
-    logElems:@[logElems; where not .type.isString each logElems; string];
-
-    fd " " sv logElems;
+    fd " " sv enlist[syslogLvl],.log.strFormatter[lvl; message];
  };
 
 / JSON logger
+/ NOTE: This logger does not do the slf4j-style parameterised replacement of the message but prints as the supplied list
 .log.loggers.json:{[fd;lvl;message]
-    logElems:`date`time`level`processId`user`handle`message!(.time.today[];.time.nowAsTime[];lvl;.log.process;`system^.z.u;.z.w;message);
+    logElems:`date`time`level`processId`user`handle`message!(.time.today[]; .time.nowAsTime[]; lvl; .log.process; `system^.z.u; .z.w; message);
     fd .j.j logElems;
  };
 
+
+/ Sets the interface functions for other kdb-common component and libraries if the interface 'if' library is defined
+/ in the current process
+/  @see .require.loadedLibs
+/  @see .if.setImplementationsFor
+/  @see .if.bindInterfacesFor
 .log.i.setInterfaceImplementations:{
+    if[not `if in key .require.loadedLibs;
+        :(::);
+    ];
+
     allLevels:lower exec level from .log.levels;
 
     ifFuncs:` sv/: `.log`if,/:allLevels;
