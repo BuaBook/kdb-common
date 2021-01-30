@@ -56,8 +56,6 @@
 
     / setLogger calls setLevel
     .log.setLogger[];
-
-    .log.i.setInterfaceImplementations[];
  };
 
 
@@ -102,6 +100,8 @@
     @[`.log; lower disabled`level; :; count[disabled]#{}];
 
     .log.level:newLevel;
+
+    .log.i.setInterfaceImplementations[];
 
     -1 "\nLogging enabled [ Level: ",string[.log.level]," ] [ Current Logger: `",string[.log.currentLogger]," ]\n";
  };
