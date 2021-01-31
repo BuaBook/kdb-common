@@ -150,3 +150,21 @@
     :func . args funcArgs;   
  };
 
+/ Deletes the specified object reference from the namespace. If the reference deleted is the last object in the
+/ namespace then the namespace is removed as well recursively up the namespace tree.
+/ NOTE: The namespace hierarchy removal will never remove the root namespace even if it is empty
+/  @param nsRef (Symbol) The object reference to remove from the namespace
+.ns.deleteReference:{[nsRef]
+    if[not .ns.isSet nsRef;
+        :(::);
+    ];
+
+    refSplit:`ns`ref!(-1_; last) @\: ` vs nsRef;
+    refSplit[`ns]:`.^$[0 = count refSplit`ns; `; ` sv refSplit`ns];
+
+    ![refSplit`ns; (); 0b; enlist refSplit`ref];
+
+    if[.type.isEmptyNamespace get refSplit`ns;
+        .z.s refSplit`ns;
+    ];
+ };
