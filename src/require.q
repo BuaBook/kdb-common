@@ -31,6 +31,11 @@
 
 
 .require.init:{[root]
+    if[.require.loadedLibs[`require]`inited;
+        .log.if.trace "Require is already initialised. Will ignore request to init again";
+        :(::);
+    ];
+
     $[null root;
         .require.location.root:.require.i.getCwd[];
         .require.location.root:root
