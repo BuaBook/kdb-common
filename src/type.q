@@ -62,10 +62,15 @@
     :0 < count keys x;
  };
 
+/ Supports checking a folder path without being loaded via system "l"
 .type.isSplayedTable:{
     if[.type.isFilePath x;
         if[not .type.isFolder x;
             :0b;
+        ];
+
+        if[not "/" = last string x;
+            x:` sv x,`;
         ];
     ];
 
