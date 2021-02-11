@@ -6,9 +6,10 @@
 
 / Schemas returned by .compress.getSplayStats, .compress.getPartitionStats and .compress.splay
 .compress.cfg.schemas:(`symbol$())!();
-.compress.cfg.schemas[`infoSplay]:      flip `column`compressedLength`uncompressedLength`algorithm`logicalBlockSize`zipLevel!"SJJIII"$\:();
-.compress.cfg.schemas[`infoPartition]:  flip `part`table`column`compressedLength`uncompressedLength`algorithm`logicalBlockSize`zipLevel!"*SSJJIII"$\:();
-.compress.cfg.schemas[`compSplay]:      flip `col`source`target`compressed`inplace`empty`writeMode!"SSSBBBS"$\:();
+.compress.cfg.schemas[`infoSplay]:      flip `column`compressedLength`uncompressedLength`compressMode`algorithm`logicalBlockSize`zipLevel!"SJJSIII"$\:();
+.compress.cfg.schemas[`infoPartition]:  flip `part`table`column`compressedLength`uncompressedLength`compressMode`algorithm`logicalBlockSize`zipLevel!"*SSJJSIII"$\:();
+.compress.cfg.schemas[`compSplay]:      flip `column`source`target`compressed`inplace`empty`writeMode!"SSSBBBS"$\:();
+.compress.cfg.schemas[`compPartition]:  flip `part`table`column`source`target`compressed`inplace`empty`writeMode!"*SSSSBBBS"$\:();
 
 / Splay and partition compression option defaults provide the following behaviour
 /  - recompress (0b): Any compressed files will be copied
@@ -30,17 +31,12 @@
 .compress.init:{};
 
 
-/ NOTE: Columns that are uncompressed will have null values for all information in the returned table
+/ NOTE: Columns that are uncompressed will have a null 'compressed' value
 /  @param splayPath (FolderPath) A folder path of a splayed table
 /  @returns (Table) The compressed stats (via -21!) of each column within the specified splay path
 /  @throws InvalidSplayPathException If the specified splay path does not exist, or does not contain a splayed table
 /  @see .compress.cfg.schemas
 .compress.getSplayStats:{[splayPath]
-    / Needs a trailing slash for .Q.qp (in .type.isSplayedTable) to work correctly
-    if[not "/" = last string splayPath;
-        splayPath:` sv splayPath,`;
-    ];
-
     if[not[.type.isFolder splayPath] | not .type.isSplayedTable splayPath;
         '"InvalidSplayPathException";
     ];
@@ -48,14 +44,17 @@
     splayCols:cols splayPath;
 
     compressStats:-21!/:` sv/: splayPath,/:splayCols;
+    compressStats:(`algorithm`logicalBlockSize`zipLevel!0 0 0i) ^/: compressStats;
 
-    statsTbl:.compress.cfg.schemas[`infoSplay] upsert/ compressStats;
+    statsTbl:.compress.cfg.schemas[`infoSplay] upsert compressStats;
     statsTbl:update column:splayCols from statsTbl;
+    statsTbl:update uncompressedLength:hcount each (` sv/: splayPath,/: column) from statsTbl where null uncompressedLength;
+    statsTbl:update compressMode:key[.compress.defaults] algorithm from statsTbl;
     :statsTbl;
  };
 
-/ NOTE: Columns that are uncompressed will have null values for all information in the returned table
-/  @param hdbRoot (FolderPath) The root folder containing a partitioned HDB
+/ NOTE: Columns that are uncompressed will have a null 'compressed' value
+/  @param hdbRoot (FolderPath) The root folder containing a partitioned HDB or the HDB segment if a segmented HDB
 /  @param partVal (Date|Month|Year|Long) The specific partition within the HDB to retrieve compression stats for
 /  @returns (Table) The compression stats (via -21!) of each column within each table within the specified HDB partition
 /  @throws InvalidHdbRootException If the specified HDB root folder does not exist
@@ -83,7 +82,7 @@
 / Based on the specified parameters, the functions behaviour (returned in the 'writeMode' column) for each column will be:
 /  - 'compress': The file is uncompressed, or is compressed and the 'recompress' option is true
 /  - 'copy': The file is either empty (0 = count) or is already compressed and the 'recompress' option is missing or false
-/  - 'ignore': The would've been copied (as above) but inplace
+/  - 'ignore': The file would've been copied (as above) but inplace so nothing to do
 /  @param sourceSplayPath (FolderPath) The source splay
 /  @param targetSplayPath (FolderPath) The target splay. This can be the same as 'sourceSplayPath' ONLY if the 'inplace' option is set to true
 /  @param compressType (Symbol|IntegerList) The compression type. If a symbol, the compression settings will be taken from '.compress.defaults'
@@ -99,8 +98,7 @@
 .compress.splay:{[sourceSplayPath; targetSplayPath; compressType; options]
     options:.compress.cfg.compressDefaults ^ options;
 
-    / Needs a trailing slash for .Q.qp (in .type.isSplayedTable) to work correctly
-    if[not .type.isSplayedTable ` sv sourceSplayPath,`;
+    if[not .type.isSplayedTable sourceSplayPath;
         '"InvalidSourceSplayPathException";
     ];
 
@@ -129,11 +127,11 @@
     ];
 
 
-    compressCfg:.compress.cfg.schemas[`compSplay] upsert flip enlist[`col]!enlist cols sourceSplayPath;
-    compressCfg:update source:(` sv/: sourceSplayPath,/: col), target:(` sv/: targetSplayPath,/: col) from compressCfg;
+    compressCfg:.compress.cfg.schemas[`compSplay] upsert flip enlist[`column]!enlist cols sourceSplayPath;
+    compressCfg:update source:(` sv/: sourceSplayPath,/: column), target:(` sv/: targetSplayPath,/: column) from compressCfg;
     compressCfg:update compressed:.file.isCompressed each source from compressCfg;
     compressCfg:update empty:0 = count first .Q.V sourceSplayPath from compressCfg;
-    compressCfg:update inplace:source=target from compressCfg;
+    compressCfg:update inplace:source = target from compressCfg;
 
     compressCfg:update writeMode:`compress`copy compressed from compressCfg;
     compressCfg:update writeMode:`ignore from compressCfg where inplace, writeMode = `copy;
@@ -146,6 +144,8 @@
 
 
     .log.if.info ("Starting splay table compression [ Source: {} ] [ Target: {} ] [ Compression: {} ]"; sourceSplayPath; targetSplayPath; compressType);
+    .log.if.trace "Compression configuration:\n",.Q.s compressCfg;
+
     st:.time.now[];
 
     .file.ensureDir targetSplayPath;
@@ -176,7 +176,7 @@
 /  @param sourceRoot (FolderPath) The path of the source HDB
 /  @param targetRoot (FolderPath) The path of the target HDB
 /  @param partVal (Date|Month|Year|Long) The specific partition within the HDB to compress
-/  @param tbls (SymbolList) The list of tables in the partition to compress
+/  @param tbls (Symbol|SymbolList) The list of tables in the partition to compress. If `COMP_ALL` is specified, all tables in the partition will be compressed
 /  @param compressType (Symbol|IntegerList) See '.compress.splay'
 /  @param options (Dict) See '.compress.splay', 'srcParTxt' / 'tgtParTxt' - set to false to ignore 'par.txt' in source or target HDBs respectively
 /  @throws SourceHdbPartitionDoesNotExistException If the specified source HDB does not exist
@@ -201,8 +201,11 @@
        '"SourceHdbPartitionDoesNotExistException";
     ];
 
+    srcTables:.file.ls srcPartPath;
 
-    srcTables:tbls inter .file.ls srcPartPath;
+    if[.type.isSymbolList tbls;
+        srcTables:tbls inter srcTables;
+    ];
 
     srcTblPaths:` sv/: srcPartPath,/:srcTables;
     tgtTblPaths:` sv/: tgtPartPath,/:srcTables;
@@ -211,6 +214,9 @@
     st:.time.now[];
 
     compressCfg:.compress.splay[;; compressType; options]'[srcTblPaths; tgtTblPaths];
+    compressCfg:(flip each enlist[`table]!/:enlist each (count each compressCfg)#'srcTables),''compressCfg;
+    compressCfg:.compress.cfg.schemas[`compPartition] upsert raze compressCfg;
+    compressCfg:update part:partVal from compressCfg;
 
     .log.if.info ("HDB partition compression complete [ Source HDB: {} ] [ Target HDB: {} ] [ Partition: {} ] [ Tables: {} ] [ Compression Type: {} ] [ Time Taken: {} ]"; sourceRoot; targetRoot; partVal; srcTables; compressType; .time.now[] - st);
 

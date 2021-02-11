@@ -232,7 +232,7 @@
  };
 
 / Standard out logger
-.require.i.log: ('[-1; .require.i.parameterisedLog])
+.require.i.log: ('[-1; .require.i.parameterisedLog]);
 
 / Standard error logger
 .require.i.logE:('[-2; .require.i.parameterisedLog]);
