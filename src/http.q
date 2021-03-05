@@ -28,6 +28,9 @@
 / The list of values that indicate JSON has been returned and '.http.i.parseResponse' should run the JSON parser on it
 .http.cfg.jsonContentTypes:enlist "application/json";
 
+/ The list of values that indicate GZIP encoding and should be uncompressed before returning
+.http.cfg.gzipContentEncodings:("gzip"; "x-gzip");
+
 / The valid TLS-enabled URL schemes
 .http.cfg.tlsSchemes:`https`wss;
 
@@ -153,6 +156,10 @@
     if[.http.cfg.followRedirects & `redirect = response`statusType;
         location:response[`headers] key[response`headers] first where `location = lower key response`headers;
 
+        if["/" = first location;
+            location:raze urlParts[`scheme`baseUrl],location;
+        ];
+
         if[0 < count location;
             .log.if.info "Following HTTP redirect as configured [ Original URL: ",url," ] [ New URL: ",location," ]";
             response:.http.send[method; location; body; contentType; headers];
@@ -180,7 +187,7 @@
 /  @see .http.i.headerToString
 .http.i.buildRequest:{[requestType; urlParts; headers; body]
     headers:(1#.q),headers;
-   
+
     urlPath:urlParts`path;
 
     if["?" in urlPath;
@@ -324,7 +331,7 @@
     if[0 < count notSet;
         proxy[notSet]:getenv each lower .http.cfg.proxyEnvVars notSet;
     ];
-    
+
     proxy[`bypass]:"," vs proxy`bypass;
     :proxy;
  };
@@ -392,7 +399,7 @@
     ppHeaders:key[.http.extractHeaders]!hdrDict key[hdrDict] first each where each value[.http.extractHeaders] =\: lower key hdrDict;
 
     if[0 < count ppHeaders`contentEncoding;
-        if[.http.gzAvailable & "gzip" ~ ppHeaders`contentEncoding;
+        if[.http.gzAvailable & ppHeaders[`contentEncoding] in .http.cfg.gzipContentEncodings;
             body:.Q.gz body;
         ];
 
