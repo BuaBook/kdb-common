@@ -1,5 +1,5 @@
 // Namespace Management Functions
-// Copyright (c) 2016 - 2019 Sport Trades Ltd
+// Copyright (c) 2016 - 2020 Sport Trades Ltd, 2021 Jaskirat Rajasansir
 
 // Documentation: https://github.com/BuaBook/kdb-common/wiki/ns.q
 
@@ -38,7 +38,7 @@
     :` sv/:ns,/:key[ns] except `;
  };
 
-/ Recurses down from the specified root namespace until no more namespaces are found. 
+/ Recurses down from the specified root namespace until no more namespaces are found.
 / All returned elements are fully qualified
 /  @param ns (Symbol) The root namespace to flatten from
 /  @returns (SymbolList) All elements of namespace and child namespaces
@@ -79,20 +79,23 @@
 
 / @param x (Symbol|Function) The function to check the arguments for
 / @returns (SymbolList) The arguments required for the specified function
-/ @throws FunctionDoesNotExistException If a symbol reference specified does not exist
-/ @throws IllegalArgumentException If the specified value (or dereferenced value) is not a function
-/ @see .ns.isSet
+/ @see .ns.i.getFunction
 .ns.getFunctionArguments:{
-    if[.type.isSymbol x;
-        if[not .ns.isSet x;
-            '"FunctionDoesNotExistException (",string[x],")";
-        ];
+    x:.ns.i.getFunction x;
 
-        x:get x;
+    $[101h = type x;
+        :enlist `x;
+    type[x] in 102 103h;
+        :`x`y
     ];
 
-    if[not .type.isFunction x;
-        '"IllegalArgumentException";
+    if[104h = type x;
+        origArgs:.ns.getFunctionArguments first get x;
+
+        filledArgs:count[origArgs] sublist 1_ get x;
+        filledArgs,:(count[origArgs] - count filledArgs)#(::);
+
+        :origArgs where (::) ~/: filledArgs;
     ];
 
     :@[;1] get x;
@@ -105,11 +108,8 @@
 /  @returns () The results of the function or a dictionary `isError`errorMsg!(`PROT_EXEC_FAILED; theError) if it fails. If running with '.ns.cfg.protectExecWithStack' enabled, `backtrace will also be added as the 2nd element
 /  @see .ns.cfg.protectExecWithStack
 .ns.protectedExecute:{[func;args]
-    if[not .type.isSymbol func;
-        '"IllegalArgumentException";
-    ];
-    
-    / Checks for function existance
+    func:.ns.i.getFunction func;
+
     funcArgCount:count .ns.getFunctionArguments func;
 
     if[1 = funcArgCount;
@@ -118,9 +118,9 @@
 
     / Can't use .Q.trp directly (for multi-argument functions)
     $[.ns.cfg.protectExecWithStack;
-        :-105!(get func; args; { `isError`backtrace`errorMsg!(.ns.const.pExecFailure; .Q.sbt y; x) });
+        :-105!(func; args; { `isError`backtrace`errorMsg!(.ns.const.pExecFailure; .Q.sbt y; x) });
     / else
-        :.[get func; args; { `isError`errorMsg!(.ns.const.pExecFailure; x) }]
+        :.[func; args; { `isError`errorMsg!(.ns.const.pExecFailure; x) }]
     ];
  };
 
@@ -147,7 +147,8 @@
         '"MissingFunctionArgumentException (",.convert.listToString[funcArgs argCheck],")";
     ];
 
-    :func . args funcArgs;   
+    / No need to dereference, as dot in this mode accepts function reference
+    :func . args funcArgs;
  };
 
 / Deletes the specified object reference from the namespace. If the reference deleted is the last object in the
@@ -167,4 +168,27 @@
     if[.type.isEmptyNamespace get refSplit`ns;
         .z.s refSplit`ns;
     ];
+ };
+
+
+/  @param func (Symbol|Function) A reference to a function or an actual function
+/  @returns (Function) Resolves the function reference such that a function is always returned
+/  @throws FunctionDoesNotExistException If the reference does not exist
+/  @throws NotAFunctionException If the input value is not a function or the reference does not reference a function
+.ns.i.getFunction:{[func]
+    $[.type.isFunction func;
+        :func;
+    not .type.isSymbol func;
+        '"NotAFunctionException";
+    not .ns.isSet func;
+        '"FunctionDoesNotExistException (",string[func],")"
+    ];
+
+    func:get func;
+
+    if[not .type.isFunction func;
+        '"NotAFunctionException";
+    ];
+
+    :func;
  };
