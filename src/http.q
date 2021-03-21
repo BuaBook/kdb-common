@@ -1,5 +1,5 @@
 // HTTP Query Library
-// Copyright (c) 2020 Jaskirat Rajasansir
+// Copyright (c) 2020 - 2021 Jaskirat Rajasansir
 
 // Documentation: https://github.com/BuaBook/kdb-common/wiki/http.q
 
@@ -25,14 +25,14 @@
 / false, the redirect response will be returned
 .http.cfg.followRedirects:1b;
 
-/ The list of values that indicate JSON has been returned and '.http.i.parseResponse' should run the JSON parser on it
-.http.cfg.jsonContentTypes:enlist "application/json";
+/ The 'Content-Type' header values in the response that will be automatically converted by the defined function
+.http.cfg.autoContentTypes:()!(`symbol$());
+.http.cfg.autoContentTypes[enlist ""]:              `;
+.http.cfg.autoContentTypes["application/json"]:     `.j.k;
+.http.cfg.autoContentTypes["application/kdb-ipc"]:  `.http.i.ipcStringParse;
 
-/ The list of values that indicate GZIP encoding and should be uncompressed before returning
+/ The 'Content-Encoding' headers values in the response that indicate GZIP encoding and should be uncompressed before returning
 .http.cfg.gzipContentEncodings:("gzip"; "x-gzip");
-
-/ The valid TLS-enabled URL schemes
-.http.cfg.tlsSchemes:`https`wss;
 
 / The environment variables to query proxy information for each URL scheme and the 'bypass' configuration
 .http.cfg.proxyEnvVars:(`symbol$())!`symbol$();
@@ -47,6 +47,9 @@
 / The HTTP version to send to the target server
 .http.httpVersion:"HTTP/1.1";
 
+/ The valid TLS-enabled URL schemes
+.http.tlsSchemes:`https`wss;
+
 / The cached or latest proxy information
 .http.proxy:key[.http.cfg.proxyEnvVars]!count[.http.cfg.proxyEnvVars]#"";
 
@@ -55,6 +58,10 @@
 
 / If .Q.gz is available, checked on init
 .http.gzAvailable:0b;
+
+/ The default 'Accept' header to send if one isn't specified by the caller
+/ Set to empty string to disable sending 'Accept' header
+.http.acceptHeader:"*/*";
 
 / Step dictionary of HTTP response codes to their types for additional information
 .http.responseTypes:`s#100 200 300 400 500i!`informational`success`redirect`clientError`serverError;
@@ -231,6 +238,12 @@
         headers[`$"Accept-Encoding"]:"gzip";
     ];
 
+    if[not `accept in lower key headers;
+        if[0 < count .http.acceptHeader;
+            headers[`Accept]:.http.acceptHeader;
+        ];
+    ];
+
     headers[`host]:urlParts`baseUrl;
 
     request:enlist " " sv (string requestType; urlPath; .http.httpVersion);
@@ -274,7 +287,7 @@
 /  @throws TlsNotAvailableException If a TLS-encrypted URL scheme is specified and TLS is not available
 /  @throws HttpConnectionFailedException If the connection to the target URL fails
 .http.i.send:{[urlParts; requestStr]
-    if[any urlParts[`scheme] like/: string[.http.cfg.tlsSchemes],\:"://";
+    if[any urlParts[`scheme] like/: string[.http.tlsSchemes],\:"://";
         if[not .util.isTlsAvailable[];
             .log.if.error "Cannot open TLS-based connection as TLS is not available in the current process";
             '"TlsNotAvailableException";
@@ -413,13 +426,28 @@
     ];
 
     if[0 < count ppHeaders`contentType;
-        contentTypes:trim ";" vs ppHeaders`contentType;
+        contentType:trim first ";" vs ppHeaders`contentType;
 
-        if[any .http.cfg.jsonContentTypes in contentTypes;
-            body:.j.k body;
+        ctConvertFunc:.http.cfg.autoContentTypes contentType;
+
+        if[not null ctConvertFunc;
+            convertRes:.ns.protectedExecute[ctConvertFunc; body];
+
+            $[.ns.const.pExecFailure ~ first convertRes;
+                .log.if.error "Failed to auto-convert response, leaving unmodified [ Content Type: ",string[contentType]," ] [ Conversion: ",string[ctConvertFunc]," ]. Error - ",convertRes`errorMsg;
+            / else
+                body:convertRes
+            ];
         ];
     ];
 
     response[`body]:body;
     :response;
+ };
+
+/ Parses kdb IPC sent as a string of bytes back into native kdb objects
+/  @param x (String) The IPC message bytes as string
+/  @returns () The native kdb object representation
+.http.i.ipcStringParse:{
+    :-9!"X"$2 cut x;
  };
