@@ -93,7 +93,7 @@
         origArgs:.ns.getFunctionArguments first get x;
 
         filledArgs:count[origArgs] sublist 1_ get x;
-        filledArgs,:(count[origArgs] - count filledArgs)#(::);
+        filledArgs:filledArgs,(count[origArgs] - count filledArgs)#(::);
 
         :origArgs where (::) ~/: filledArgs;
     ];

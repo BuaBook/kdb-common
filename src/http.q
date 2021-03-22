@@ -67,7 +67,7 @@
 .http.responseTypes:`s#100 200 300 400 500i!`informational`success`redirect`clientError`serverError;
 
 / Headers that are extracted in '.http.i.parseResponse' for post processing
-.http.extractHeaders:`contentType`contentEncoding!`$("content-type";"content-encoding");
+.http.responseExtractHeaders:`contentType`contentEncoding!`$("content-type";"content-encoding");
 
 
 .http.init:{
@@ -392,32 +392,32 @@
 /  @see .http.gzAvailable
 /  @see .Q.gz
 .http.i.parseResponse:{[responseStr]
-    responseStr:.http.newLine vs responseStr;
+    / Split on the empty line between the meta information and the body
+    metaSplit:first responseStr ss 4#.http.newLine;
+
+    httpMeta:.http.newLine vs metaSplit#responseStr;
+    body:4_ metaSplit _ responseStr;
+
+    .log.if.trace "HTTP response:\n",(metaSplit#responseStr),"\n";
 
     response:`statusCode`statusType`statusDetail`headers`body!(0Ni; `; ""; ()!(); "");
 
-    status:last .http.httpVersion vs first responseStr;
-    response[`statusCode`statusDetail]:"I*"$' (5#; 5_) @\: status;
+    response[`statusCode`statusDetail]:"I*"$' 1_ " " vs first httpMeta;
     response[`statusType]:.http.responseTypes response`statusCode;
 
-    hdrEnd:first where "" ~/:responseStr;
-    headers:responseStr 1 + til hdrEnd - 1;
-
-    hdrDict:(!). "S*" $' flip ": " vs/:headers;
+    hdrDict:(!). "S*" $' flip ": " vs/:1_ httpMeta;
     response[`headers]:hdrDict;
 
-    body:raze (hdrEnd + 1) _ responseStr;
-
     / Headers extracted required for response post-processing
-    ppHeaders:key[.http.extractHeaders]!hdrDict key[hdrDict] first each where each value[.http.extractHeaders] =\: lower key hdrDict;
+    ppHeaders:key[.http.responseExtractHeaders]!hdrDict key[hdrDict] first each where each value[.http.responseExtractHeaders] =\: lower key hdrDict;
 
     if[0 < count ppHeaders`contentEncoding;
         if[.http.gzAvailable & ppHeaders[`contentEncoding] in .http.cfg.gzipContentEncodings;
             body:.Q.gz body;
         ];
 
-        if[not[.http.gzAvailable] | not "gzip" ~ ppHeaders`contentEncoding;
-            .log.if.error "Invalid content encoding in HTTP response [ Specified: ",ppHeaders[`contentEncoding]," ] [ Supported: ",string[`none`gzip .http.gzAvailable]," ]";
+        if[not[.http.gzAvailable] | not ppHeaders[`contentEncoding] in .http.cfg.gzipContentEncodings;
+            .log.if.error "Invalid content encoding in HTTP response [ Specified: ",ppHeaders[`contentEncoding]," ] [ GZIP Available: ",string[`no`yes .http.gzAvailable]," ]";
 
             if[.http.cfg.errorOnInvaildContentEncoding;
                 '"InvalidContentEncodingException";
@@ -434,7 +434,7 @@
             convertRes:.ns.protectedExecute[ctConvertFunc; body];
 
             $[.ns.const.pExecFailure ~ first convertRes;
-                .log.if.error "Failed to auto-convert response, leaving unmodified [ Content Type: ",string[contentType]," ] [ Conversion: ",string[ctConvertFunc]," ]. Error - ",convertRes`errorMsg;
+                .log.if.error "Failed to auto-convert response, leaving unmodified [ Content Type: ",contentType," ] [ Conversion: ",string[ctConvertFunc]," ]. Error - ",convertRes`errorMsg;
             / else
                 body:convertRes
             ];
