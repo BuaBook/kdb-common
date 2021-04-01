@@ -121,6 +121,12 @@
     :.http.send[`DELETE; url; body; contentType; headers];
  };
 
+/ Performs a HTTP PATCH to the target URL and parses the response
+.http.patch:{[url; body; contentType; headers]
+    headers[`Connection]:"close";
+    :.http.send[`PATCH; url; body; contentType; headers];
+ };
+
 / Sends a HTTP request and parses the response
 /  @param method (Symbol) The HTTP method that the request will be sent as
 /  @param url (String) The target URL to send data to
@@ -402,7 +408,7 @@
 
     response:`statusCode`statusType`statusDetail`headers`body!(0Ni; `; ""; ()!(); "");
 
-    response[`statusCode`statusDetail]:"I*"$' 1_ " " vs first httpMeta;
+    response[`statusCode`statusDetail]:"I*" $' (first; " " sv 1_)@\:1_ " " vs first httpMeta;
     response[`statusType]:.http.responseTypes response`statusCode;
 
     hdrDict:(!). "S*" $' flip ": " vs/:1_ httpMeta;
