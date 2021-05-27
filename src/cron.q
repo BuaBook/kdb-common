@@ -242,11 +242,12 @@
 
     newNextRunTime:(+). jobDetails`nextRunTime`interval;
 
-    $[newNextRunTime > jobDetails`endTime;
-        update nextRunTime:0Wp from `.cron.jobs where id = jobId;
-    / else
-        update nextRunTime:newNextRunTime from `.cron.jobs where id = jobId
+    if[newNextRunTime > jobDetails`endTime;
+        .log.if.info "Job has reached 'end time'. Will not schedule again [ Job: ",string[jobId]," ]";
+        newNextRunTime:0Wp;
     ];
+
+    update nextRunTime:newNextRunTime from `.cron.jobs where id = jobId;
 
     :status;
  };
