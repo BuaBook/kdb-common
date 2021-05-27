@@ -5,7 +5,7 @@
 
 / All infinite values
 /  @see .type.isInfinite
-.type.const.infinites:raze (::;neg)@\:(0Wh;0Wi;0Wj;0We;0Wf;0Wp;0Wm;0Wd;0Wz;0Nn;0Wu;0Wv;0Wt);
+.type.const.infinites:raze (::;neg)@\:(0Wh;0Wi;0Wj;0We;0Wf;0Wp;0Wm;0Wd;0Wz;0Wn;0Wu;0Wv;0Wt);
 
 / Mapping of type name based on index in the list (matching .Q.t behaviour)
 .type.const.types:`mixedList`boolean`guid``byte`short`integer`long`real`float`character`symbol`timestamp`month`date`datetime`timespan`minute`second`time;
