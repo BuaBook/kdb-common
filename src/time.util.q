@@ -35,8 +35,26 @@
     :except[;".:"] string[.time.today[]],"_",string[ddmmss],"_",string millis;
  };
 
+/  @returns (Timestamp) Current time as timestamp but rounded to the nearest millisecond
+.time.nowAsMsRoundedTimestamp:{
+    :.time.today[] + .time.nowAsTime[];
+ };
+
 /  @returns (String) A file name friendly representation of the current date. Format is 'yyyymmdd'
 /  @see .time.today[]
 .time.todayForFileName:{
     :except[;"."] string .time.today[];
+ };
+
+/ Rounds nanosecond precision timestamps and timespans to milliseconds
+.time.roundTimestampToMs:.time.roundTimespanToMs:{
+    if[not any .type[`isTimestamp`isTimespan] @\: x;
+        '"IllegalArgumentException";
+    ];
+
+    if[.type.isInfinite x;
+        :x;
+    ];
+
+    :.Q.t[abs type x]$1000000 * (`long$x) div 1000000;
  };
