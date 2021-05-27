@@ -72,7 +72,6 @@
 /  @param tbl (Table) A table with all values of the table convertable to string by '.type.ensureString'
 /  @returns (String) A HTML version of the table
 /  @throws IllegalArgumentException If the parameter is not a table
-/  @throws MixedListColumnsNotSupportedException If any mixed list columns are present in the table
 /  @see .type.ensureString
 .convert.tableToHtml:{[tbl]
     if[not .type.isTable tbl;
