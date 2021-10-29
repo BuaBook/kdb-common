@@ -1,5 +1,5 @@
 // Type Checking and Normalisation
-// Copyright (c) 2016 - 2020 Sport Trades Ltd
+// Copyright (c) 2016 - 2020 Sport Trades Ltd, (c) 2021 Jaskirat Rajasansir
 
 // Documentation: https://github.com/BuaBook/kdb-common/wiki/type.q
 
@@ -63,6 +63,12 @@
  };
 
 .type.isSplayedTable:{
+    if[.type.isFilePath x;
+        if[not .type.isFolder x;
+            :0b;
+        ];
+    ];
+
     :0b~.Q.qp $[.type.isSymbol x;get;::] x;
  };
 

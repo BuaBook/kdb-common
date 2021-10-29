@@ -1,5 +1,5 @@
 // File Manipulation Functions
-// Copyright (c) 2015 - 2017 Sport Trades Ltd
+// Copyright (c) 2015 - 2017 Sport Trades Ltd, (c) 2021 Jaskirat Rajasansir
 
 // Documentation: https://github.com/BuaBook/kdb-common/wiki/file.q
 
@@ -74,7 +74,7 @@
     .util.system "l ",.convert.hsymToString dir;
  };
 
-/ Recurseively desecends from the specified root folder down and lists all 
+/ Recurseively desecends from the specified root folder down and lists all
 / files within each folder until no more folders are found. NOTE: Symbolic
 / links will be treated as a folder, so ensure there are no circular references.
 /  @param root (FolderPath) The root directory to start the tree from
@@ -107,3 +107,20 @@
         :0 < compStatus`algorithm
     ];
  };
+
+/  Replaces the specified target file or folder with the specified source file or folder
+/  NOTE: If the target exists, it will be deleted prior to the move
+/   @param source (FilePath|FolderPath) The source file or folder
+/   @param target (FilePath|FolderPath) The target file or folder to replace with the target
+.file.replace:{[source; target]
+    if[not all .type.isFilePath each (source; target);
+        '"IllegalArgumentException";
+    ];
+
+    source:1_ string source;
+    target:1_ string target;
+
+    .os.run[`rmFolder; target];
+    .os.run[`mv; source,"|",target];
+ };
+

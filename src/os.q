@@ -139,7 +139,7 @@
 .os.w.sleep:{
     :"timeout /t ",x," /nobreak >nul";
  };
- 
+
 / ln requires 2 arguments so pass string separated by "|"
 / First argument should be the target, 2nd argument should be the source
 .os.w.ln:{
@@ -152,6 +152,13 @@
 .os.w.mv:{
     args:"|" vs x;
     :"move ",.os.i.convertPathForWindows[args 0]," ",.os.i.convertPathForWindows args 1;
+ };
+
+/ cp requires 2 arguments so pass string separated by "|"
+/ First argument should be the source, 2nd argument should be the target
+.os.w.cp:{
+    args:"|" vs x;
+    :"copy ",.os.i.convertPathForWindows[args 0]," ",.os.i.convertPathForWindows args 1;
  };
 
 .os.w.rmFolder:{
@@ -214,7 +221,7 @@
 .os.l.rmF:{
     :"rm -vf ",x;
  };
- 
+
 .os.l.pidCheck:{
     :"kill -n 0 ",x," 2>/dev/null; echo $?";
  };
@@ -247,6 +254,13 @@
 .os.l.mv:{
     args:"|" vs x;
     :"mv ",args[0]," ",args 1;
+ };
+
+/ cp requires 2 arguments so pass string separated by "|"
+/ First argument should be the source, 2nd argument should be the target
+.os.l.cp:{
+    args:"|" vs x;
+    :"cp ",args[0]," ",args 1;
  };
 
 .os.l.rmFolder:{
@@ -293,6 +307,9 @@
     :"tty --quiet; echo $?";
  };
 
+.os.l.shell:{
+    :"bash -c \"",x,"\"";
+ };
 
 // Mac OSX Implementation
 .os.m.mkdir:{
@@ -347,6 +364,13 @@
 .os.m.mv:{
     args:"|" vs x;
     :"mv ",args[0]," ",args 1;
+ };
+
+/ cp requires 2 arguments so pass string separated by "|"
+/ First argument should be the source, 2nd argument should be the target
+.os.m.cp:{
+    args:"|" vs x;
+    :"cp ",args[0]," ",args 1;
  };
 
 .os.m.rmFolder:{
