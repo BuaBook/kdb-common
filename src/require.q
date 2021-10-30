@@ -1,5 +1,5 @@
 // Code Loading Library
-// Copyright (c) 2016 - 2017 Sport Trades Ltd, (c) 2020 Jaskirat Rajasansir
+// Copyright (c) 2016 - 2017 Sport Trades Ltd, (c) 2020 - 2021 Jaskirat Rajasansir
 
 // Documentation: https://github.com/BuaBook/kdb-common/wiki/require.q
 
@@ -22,12 +22,12 @@
 / Required interface implementations for 'require' and related kdb-common libraries to function correctly
 .require.interfaces:`lib`ifFunc xkey flip `lib`ifFunc`implFunc!"SS*"$\:();
 .require.interfaces[``]:(::);
-.require.interfaces[`log`.log.if.trace]:-1;
-.require.interfaces[`log`.log.if.debug]:-1;
-.require.interfaces[`log`.log.if.info]: -1;
-.require.interfaces[`log`.log.if.warn]: -1;
-.require.interfaces[`log`.log.if.error]:-2;
-.require.interfaces[`log`.log.if.fatal]:-2;
+.require.interfaces[`log`.log.if.trace]:`.require.i.log;
+.require.interfaces[`log`.log.if.debug]:`.require.i.log;
+.require.interfaces[`log`.log.if.info]: `.require.i.log;
+.require.interfaces[`log`.log.if.warn]: `.require.i.log;
+.require.interfaces[`log`.log.if.error]:`.require.i.logE;
+.require.interfaces[`log`.log.if.fatal]:`.require.i.logE;
 
 
 .require.init:{[root]
@@ -44,7 +44,7 @@
     .require.i.setDefaultInterfaces[];
 
     (.require.markLibAsLoaded;.require.markLibAsInited)@\:`require;
-    
+
     / If file tree has already been specified, don't overwrite
     if[.require.location.discovered~enlist`;
         .require.rescanRoot[];
@@ -57,7 +57,7 @@
 
 
 / Loads the specified library but does not initialise it. Useful if there is some configuration
-/ to perform after load, but prior to initialisation. When you are ready to to initialise, 
+/ to perform after load, but prior to initialisation. When you are ready to to initialise,
 / use .require.lib.
 /  @see .require.i.load
 .require.libNoInit:{[lib]
@@ -126,7 +126,7 @@
             '"LibraryLoadException";
         ];
     } each 1_/:string libFiles;
-    
+
     .require.markLibAsLoaded lib;
     .require.loadedLibs[lib]:enlist[`files]!enlist libFiles;
  };
@@ -163,7 +163,7 @@
             .log.if.error "Init function (",string[initFname],") failed to execute successfully [ Lib: ",string[lib]," ]. Error - ",last initRes;
             '"LibraryInitFailedException (",string[initFname],")";
         ];
-        
+
         .require.markLibAsInited lib;
 
         .log.if.info "Initialised library: ",string lib;
@@ -219,3 +219,20 @@
 
     .require.lib`if;
  };
+
+/ Supports slf4j-style parameterised logging for improved logging performance even without a logging library
+/  @param (String|List) If a generic list is provided, assume parameterised and replace "{}" in the message (first element)
+/  @returns (String) The message with "{}" replaced with the values supplied after the message
+.require.i.parameterisedLog:{[message]
+    if[0h = type message;
+        message:"" sv ("{}" vs first message),'(.Q.s1 each 1_ message),enlist "";
+    ];
+
+    :message;
+ };
+
+/ Standard out logger
+.require.i.log: ('[-1; .require.i.parameterisedLog])
+
+/ Standard error logger
+.require.i.logE:('[-2; .require.i.parameterisedLog]);
