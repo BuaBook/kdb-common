@@ -9,32 +9,27 @@ All the details related to this library can be found on the wiki:
 To use the functionality within this repository straight away:
 
 1. Download the latest version, extract and `cd` into the root folder
-1. Run `q src/require.q`
-1. `.require.init[]`
+1. Start kdb+ with `boot.q`:
+    * Linux: `q $(pwd)/boot.q`
+    * Windows: `q %CD%/boot.q`
 
-You can then load any of the libraries within the repository by using the `.require.lib` function with the library name. For example, to load `log.q`, type ``.require.lib `log``.
+This initialisation script will load the `cargs` and `log` libraries automatically during boot. Additional libraries can be loaded via the `--load-libs` command line argument, or once the process is booted with the `.require.lib` function.
+
+See the [require.q wiki page](https://github.com/BuaBook/kdb-common/wiki/require.q) for more information.
 
 ### Example Output
 
-```q
-C:\Users\jasra_000\git\kdb-common>%QHOME%\w32\q src/require.q
-KDB+ 3.4 2016.10.10 Copyright (C) 1993-2016 Kx Systems
-w32/ 4()core 4095MB jasra_000 jase6230 10.1.0.249 NONEXPIRE
-
-q).require.init[]
-Require library initialised [ Root: :C:\Users\jasra_000\git\kdb-common ]
-Library root location refreshed [ File Count: 29 ]
-q).require.lib `log
-Loading library: `log
-Loading C:\Users\jasra_000\git\kdb-common/src/log.q
-Loading library: `util
-Loading C:\Users\jasra_000\git\kdb-common/src/util.q
-Loading library: `type
-Loading C:\Users\jasra_000\git\kdb-common/src/type.q
+```bash
+> rlwrap $QHOME/l64/q $(pwd)/boot.q
+...
+Application root: /home/jas/git/kdb-common | kdb-common root: /home/jas/git/kdb-common
+Library root location refreshed [ File Count: 61 ]
+...
 Library initialisation function detected [ Func: .log.init ]
+Binding implementations to library interfaces [ Library: log ] [ Interfaces: 6 ]
 
-Logging enabled [ Level: INFO ]
+Logging enabled [ Level: INFO ] [ Logger: .log.loggers.basic ] [ Formatter: .log.formatter.default ]
 
-2017.03.07 10:47:30.381 INFO pid-6644 jasra_000 0 Initialised library: `log
+2021.11.04 08:58:26.877 INFO  pid-727 jas 0 Initialised library: log
 q)
 ```
