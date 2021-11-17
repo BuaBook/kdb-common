@@ -73,7 +73,7 @@
 .log.pattern:()!();
 
 / When call line tracing is enabled, this list of strings can be used to remove common prefixes from the file paths. By default, if this is
-/ empty when the library is initialised, it will be defaulted to '.require.location.root'
+/ empty when the library is initialised, it will be defaulted to '.require.location.paths'
 .log.sourcePathExcludePrefixes:();
 
 
@@ -91,7 +91,7 @@
     ];
 
     if[0 = count .log.sourcePathExcludePrefixes;
-        .log.sourcePathExcludePrefixes,:enlist 1_ string .require.location.root;
+        .log.sourcePathExcludePrefixes,:1_/: string .require.location.paths;
     ];
 
     / setLogger calls setLevel
