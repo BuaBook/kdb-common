@@ -4,19 +4,24 @@
 .require.lib each `type`file`time;
 
 
-/ Schemas returned by .compress.getSplayStats, .compress.getPartitionStats and .compress.splay
+/ Schemas returned by .compress.getSplayStats, .compress.getPartitionStats, .compress.splay and .compress.partition
 .compress.cfg.schemas:(`symbol$())!();
 .compress.cfg.schemas[`infoSplay]:      flip `column`compressedLength`uncompressedLength`compressMode`algorithm`logicalBlockSize`zipLevel!"SJJSIII"$\:();
 .compress.cfg.schemas[`infoPartition]:  flip `part`table`column`compressedLength`uncompressedLength`compressMode`algorithm`logicalBlockSize`zipLevel!"*SSJJSIII"$\:();
-.compress.cfg.schemas[`compSplay]:      flip `column`source`target`compressed`inplace`empty`writeMode!"SSSBBBS"$\:();
-.compress.cfg.schemas[`compPartition]:  flip `part`table`column`source`target`compressed`inplace`empty`writeMode!"*SSSSBBBS"$\:();
+.compress.cfg.schemas[`compSplay]:      flip `column`source`target`compressed`inplace`empty`writeMode`dryrun`parallel`time!"SSSBBBSBBN"$\:();
+.compress.cfg.schemas[`compPartition]:  flip `part`table`column`source`target`compressed`inplace`empty`writeMode`dryrun`parallel`time!"*SSSSBBBSBBN"$\:();
 
 / Splay and partition compression option defaults provide the following behaviour
 /  - recompress (0b): Any compressed files will be copied
 /  - inplace (0b): Source splay path = target splay path will result in error
-/  - srcParTxt (1b): 'par.txt' in source partition HDB root will be used
-/  - tgtParTxt (1b): 'par.txt' in target partition HDB root will be used
-.compress.cfg.compressDefaults:`recompress`inplace`srcParTxt`tgtParTxt!0011b;
+/  - srcParTxt (1b): 'par.txt' in source partition HDB root will be used (only with .compress.partition)
+/  - tgtParTxt (1b): 'par.txt' in target partition HDB root will be used (only with .compress.partition)
+/  - parallel (1b): Parallelise compression of columns within a splay if possible
+/  - dryrun (0b): Return table of what *would* be done based on the supplied parameters
+.compress.cfg.compressDefaults:`recompress`inplace`srcParTxt`tgtParTxt`parallel`dryrun!001110b;
+
+/ The file suffixes of the additional files stored by kdb+ for nested lists
+.compress.cfg.nestedListSuffixes:("#"; "##");
 
 
 / Default compression modes for each compression type supported within kdb+
@@ -33,7 +38,7 @@
 
 / NOTE: Columns that are uncompressed will have a null 'compressed' value
 /  @param splayPath (FolderPath) A folder path of a splayed table
-/  @returns (Table) The compressed stats (via -21!) of each column within the specified splay path
+/  @returns (Table) The compressed stats (via -21!) of each column, included additional columns for nested lists within the specified splay path
 /  @throws InvalidSplayPathException If the specified splay path does not exist, or does not contain a splayed table
 /  @see .compress.cfg.schemas
 .compress.getSplayStats:{[splayPath]
@@ -41,7 +46,7 @@
         '"InvalidSplayPathException";
     ];
 
-    splayCols:cols splayPath;
+    splayCols:.compress.i.getColumns splayPath;
 
     compressStats:-21!/:` sv/: splayPath,/:splayCols;
     compressStats:(`algorithm`logicalBlockSize`zipLevel!0 0 0i) ^/: compressStats;
@@ -82,11 +87,13 @@
 / Based on the specified parameters, the functions behaviour (returned in the 'writeMode' column) for each column will be:
 /  - 'compress': The file is uncompressed, or is compressed and the 'recompress' option is true
 /  - 'copy': The file is either empty (0 = count) or is already compressed and the 'recompress' option is missing or false
-/  - 'ignore': The file would've been copied (as above) but inplace so nothing to do
+/  - 'ignore': The file would've been copied (as above) but is inplace or a nested list additional file that is compressed
+/ By default, compression of the splay columns will be parallelised across the available threads iff no copying is required. This can be disabled (e.g. if RAM limited) with the 'parallel' option
+/ NOTE: Decompression can be performed by specifying 'none' as the 'compressType' and enabling the 'recompress' option
 /  @param sourceSplayPath (FolderPath) The source splay
 /  @param targetSplayPath (FolderPath) The target splay. This can be the same as 'sourceSplayPath' ONLY if the 'inplace' option is set to true
 /  @param compressType (Symbol|IntegerList) The compression type. If a symbol, the compression settings will be taken from '.compress.defaults'
-/  @param options (Dict) 'recompress' - see description above. 'inplace' - must be true if the target is the same as the source
+/  @param options (Dict) 'inplace' - must be true if the target is the same as the source
 /  @returns (Table) Details of the columns and how they were compressed to the target
 /  @throws InvalidSourceSplayPathException If the source path specified is not a splay table folder
 /  @throws TargetAlreadyExistsException If the specified target is already a folder
@@ -127,7 +134,8 @@
     ];
 
 
-    compressCfg:.compress.cfg.schemas[`compSplay] upsert flip enlist[`column]!enlist cols sourceSplayPath;
+    / '.d' is copied seperately after all the columns
+    compressCfg:.compress.cfg.schemas[`compSplay] upsert flip enlist[`column]!enlist .compress.i.getColumns sourceSplayPath;
     compressCfg:update source:(` sv/: sourceSplayPath,/: column), target:(` sv/: targetSplayPath,/: column) from compressCfg;
     compressCfg:update compressed:.file.isCompressed each source from compressCfg;
     compressCfg:update empty:0 = count first .Q.V sourceSplayPath from compressCfg;
@@ -142,34 +150,52 @@
         compressCfg:update writeMode:`compress from compressCfg
     ];
 
+    compressCols:exec column from compressCfg where writeMode = `compress;
 
-    .log.if.info ("Starting splay table compression [ Source: {} ] [ Target: {} ] [ Compression: {} ]"; sourceSplayPath; targetSplayPath; compressType);
+    / Don't compress additional nested list files directly, -19! will do that for us
+    if[0 < count compressCols;
+        nestedLists:compressCfg[`column] raze where each compressCfg[`column] like/: string[compressCols] cross .compress.cfg.nestedListSuffixes;
+
+        if[0 < count nestedLists;
+            .log.if.debug ("Ignoring additional files for nested lists being compressed [ Source: {} ] [ Ignoring: {} ]"; sourceSplayPath; nestedLists);
+            compressCfg:update writeMode:`ignore from compressCfg where column in nestedLists;
+        ];
+    ];
+
+    / peach = each if no slave threads, but nicer to show status in logging and table result
+    compressCfg:update parallel:all (options`parallel; not any `copy = writeMode; 0 < system "s") from compressCfg;
+
+    parallel:first[compressCfg]`parallel;
+    compressInfo:(sourceSplayPath; targetSplayPath; compressType; `no`yes parallel);
+
+
+    if[options`dryrun;
+        .log.if.info enlist["DRYRUN Splay table compression [ Source: {} ] [ Target: {} ] [ Compression: {} ] [ Parallel: {} ]"],compressInfo;
+
+        compressCfg:update dryrun:1b from compressCfg;
+        :compressCfg;
+    ];
+
+
+    .log.if.info enlist["Starting splay table compression [ Source: {} ] [ Target: {} ] [ Compression: {} ] [ Parallel: {} ]"],compressInfo;
     .log.if.trace "Compression configuration:\n",.Q.s compressCfg;
 
     st:.time.now[];
 
     .file.ensureDir targetSplayPath;
 
-    {[compressType; colCompressCfg]
-        .log.if.debug enlist["Processing column [ Source: {} ] [ Target: {} ] [ Write Mode: {} ]"],colCompressCfg`source`target`writeMode;
-
-        $[`ignore = colCompressCfg`writeMode;
-            :(::);
-        `copy = colCompressCfg`writeMode;
-            .os.run[`cp; "|" sv 1_/: string colCompressCfg`source`target];
-        `compress = colCompressCfg`writeMode;
-            -19!colCompressCfg[`source`target],compressType
-        ];
-
-    }[compressType;] each compressCfg;
+    compressFunc:.compress.i.file[compressType;];
+    compressTimes:((each; peach) parallel)[compressFunc; delete from compressCfg where writeMode = `ignore];
 
     / Copy the '.d' file at the end
     -19!(` sv sourceSplayPath,`.d; ` sv targetSplayPath,`.d),.compress.defaults`none;
 
     .log.if.info ("Splay table compression complete [ Source: {} ] [ Target: {} ] [ Compression: {} ] [ Time Taken: {} ]"; sourceSplayPath; targetSplayPath; compressType; .time.now[] - st);
 
+    compressCfg:update time:compressTimes from compressCfg where not writeMode = `ignore;
     :compressCfg;
  };
+
 
 / Compresses multiple splayed tables within a HDB partition.
 / NOTE: The 'sym' file of the source HDB is not copied or symlinked to the target HDB
@@ -221,4 +247,30 @@
     .log.if.info ("HDB partition compression complete [ Source HDB: {} ] [ Target HDB: {} ] [ Partition: {} ] [ Tables: {} ] [ Compression Type: {} ] [ Time Taken: {} ]"; sourceRoot; targetRoot; partVal; srcTables; compressType; .time.now[] - st);
 
     :compressCfg;
+ };
+
+
+/ Compress or copy an individual file within a splay
+/ NOTE: No parameter validation is performed within this function
+/  @param compressType (IntegerList) The compression mode to apply
+/  @param compressCfg (Dict) A row of compression configuration (schema in .compress.cfg.schemas`compSplay)
+/  @returns (Timespan) The time taken to compress or copy the file
+.compress.i.file:{[compressType; compressCfg]
+    st:.time.now[];
+
+    .log.if.debug enlist["Processing file [ Source: {} ] [ Target: {} ] [ Write Mode: {} ]"],compressCfg`source`target`writeMode;
+
+    $[`copy = compressCfg`writeMode;
+        .os.run[`cp;] "|" sv 1_/: string compressCfg`source`target;
+    `compress = compressCfg`writeMode;
+        -19!compressCfg[`source`target],compressType
+    ];
+
+    :.time.now[] - st;
+ };
+
+
+/  @returns (SymbolList) Columns in the table order (as defined in '.d') with any additional columns for nested lists appended on the end
+.compress.i.getColumns:{[splayPath]
+    :cols[splayPath] union .file.ls[splayPath] except `.d;
  };
