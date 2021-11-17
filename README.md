@@ -11,11 +11,11 @@ To use the functionality within this repository straight away:
 1. Download the latest version, extract and `cd` into the root folder
 1. Start kdb+ with `boot.q`:
     * Linux: `q $(pwd)/boot.q`
-    * Windows: `q %CD%/boot.q`
+    * Windows: `q %CD%\boot.q`
 
 This initialisation script will load the `cargs` and `log` libraries automatically during boot. Additional libraries can be loaded via the `--load-libs` command line argument, or once the process is booted with the `.require.lib` function.
 
-See the [require.q wiki page](https://github.com/BuaBook/kdb-common/wiki/require.q) for more information.
+See the [boot.q wiki page](https://github.com/BuaBook/kdb-common/wiki/boot.q) for more information on this initialisation and the [require.q wiki page](https://github.com/BuaBook/kdb-common/wiki/require.q) for more information on loading libraries into the process.
 
 ### Example Output
 
