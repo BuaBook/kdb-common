@@ -54,6 +54,19 @@
     :.env.cache envVar;
  };
 
+/  @returns (FilePath) The full path of the specified command as it exists within '$PATH' (matching the Linux 'which' command)
+/  @throws CommandNotFoundException If the command does not exist in '$PATH'
+/  @see .env.i.findInPathTypeVar
+.env.which:{[cmd]
+    cmdPath:.env.i.findInPathTypeVar[cmd; `PATH];
+
+    if[null cmdPath;
+        '"CommandNotFoundException";
+    ];
+
+    :cmdPath;
+ };
+
 
 / Loads and optionally parses the specified environment variable with the specified parse function reference
 /  @param envVar (Symbol) The environment variable to parse
@@ -87,4 +100,24 @@
     paths@:where .type.isFolder each paths;
 
     :paths;
+ };
+
+/ Finds the specified file within the folders defined in a '$PATH'-type environment variable
+/  @param file (String|Symbol) The name of the file to find
+/  @param pathVar (Symbol) The '$PATH'-type variable to search
+/  @returns (Symbol) The full path of the file or null symbol if not found
+/  @see .env.get
+.env.i.findInPathTypeVar:{[file; pathVar]
+    file:.type.ensureSymbol file;
+
+    paths:.env.get pathVar;
+
+    toFind:paths!key each paths;
+    toFind:where file in/: toFind;
+
+    if[0 = count toFind;
+        :`;
+    ];
+
+    :` sv first[toFind],file;
  };
