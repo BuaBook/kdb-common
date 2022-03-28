@@ -21,6 +21,13 @@
 /  * tickless: New approach to only 'tick' the timer  when the next job is due to run. Can reduce process load when infrequent jobs are run
 .cron.cfg.mode:`ticking;
 
+/ Configures how start times to '.cron.add' are handled. There are 3 supported modes:
+/  * 'disallowed': Any time earlier than 'now' (to the nearest second) will be rejected and an exception thrown
+/  * 'allowed': Any time will be allowed
+/  * 'setAsNow': Any time earlier than 'now' will be modified to be 'now' and then added
+/ NOTE: That with this set to 'allowed' or 'setAsNow' the job will execute as soon as the current function execution completes
+.cron.cfg.historicalStartTimes:`disallowed;
+
 
 / Unique job ID for each cron job added
 .cron.jobId:1;
@@ -44,6 +51,9 @@
 .cron.supportedModes[`ticking]: `.cron.mode.ticking;
 .cron.supportedModes[`tickless]:`.cron.mode.tickless;
 
+/ The supported modes to deal with 'historical' start times
+.cron.historicalStartTimeModes:`disallowed`allowed`setAsNow;
+
 / The maximum supported timer interval as a timespan
 .cron.maxTimerAsTimespan:.convert.msToTimespan 0Wi - 1;
 
@@ -63,6 +73,11 @@
 
     if[not `.cron.cleanStatus in exec func from .cron.jobs;
         .cron.addRepeatForeverJob[`.cron.cleanStatus; (::); `timestamp$.time.today[]+1; 1D];
+    ];
+
+    if[not .cron.cfg.historicalStartTimes in .cron.historicalStartTimeModes;
+        .log.if.error ("Invalid historical start time configuration. Must be one of: {}"; .cron.historicalStartTimeModes);
+        '"InvalidCronConfigurationException";
     ];
  };
 
@@ -125,14 +140,26 @@
 
     startTime:.time.roundTimestampToMs startTime;
     endTime:.time.roundTimestampToMs endTime;
+    now:.time.today[] + `second$.time.nowAsTime[];
 
-    if[startTime < .time.nowAsMsRoundedTimestamp[];
-        .log.if.error "Cron job start time is in the past. Cannot add job";
-        '"InvalidCronJobTimeException";
+    if[startTime < now;
+        if[`disallowed = .cron.cfg.historicalStartTimes;
+            .log.if.error ("Cron job start time is in the past. Cannot add job [ Start Time: {} ] [ Now: {} ]"; startTime; now);
+            '"InvalidCronJobTimeException";
+        ];
+
+        if[`allowed = .cron.cfg.historicalStartTimes;
+            .log.if.debug ("Allowing start time in the past as configured [ Start Time: {} ] [ Now: {} ]"; startTime; now);
+        ];
+
+        if[`setAsNow = .cron.cfg.historicalStartTimes;
+            .log.if.debug ("Overwriting start time in the past to now as configured [ Start Time: {} ] [ Now: {} ]"; startTime; now);
+            startTime:now;
+        ];
     ];
 
     if[not[.util.isEmpty endTime] & endTime < startTime;
-        .log.if.error "Cron job end time specified is before the start time. Cannot add job";
+        .log.if.error ("Cron job end time specified is before the start time. Cannot add job [ Start Time: {} ] [ End Time: {} ]"; startTime; endTime)
         '"InvalidCronJobTimeException";
     ];
 
@@ -316,7 +343,7 @@
 / NOTE: Does not validate the configured ticking mode
 /  @see .cron.cfg.timerInterval
 .cron.mode.ticking:{
-    .log.if.info "Enabling cron job scheduler [ Mode: Ticking ] [ Timer Interval: ",string[.cron.cfg.timerInterval]," ms ]";
+    .log.if.info "Enabling cron job scheduler [ Mode: Ticking ] [ Timer Interval: ",string[.cron.cfg.timerInterval]," ms ] [ Historical Start Times: ",string[.cron.cfg.historicalStartTimes]," ]";
     system "t ",string .cron.cfg.timerInterval;
  };
 
@@ -324,6 +351,6 @@
 / NOTE: Does not validate the configured ticking mode
 /  @see .cron.i.setNextTick
 .cron.mode.tickless:{
-    .log.if.info "Enabling cron job scheduler [ Mode: Tickless ]";
+    .log.if.info "Enabling cron job scheduler [ Mode: Tickless ] [ Historical Start Times: ",string[.cron.cfg.historicalStartTimes]," ]";
     .cron.i.setNextTick[];
  };
