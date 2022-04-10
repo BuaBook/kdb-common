@@ -88,7 +88,7 @@
 .os.isInteractiveSession:{
     interactRes:.os.run[`isInteractive; ::];
 
-    if[`l = .os.type;
+    if[.os.type in `l`m;
         :not "B"$first interactRes;
     ];
  };
