@@ -23,6 +23,9 @@
 / The file suffixes of the additional files stored by kdb+ for nested lists
 .compress.cfg.nestedListSuffixes:("#"; "##");
 
+/ The dict for an uncompressed file (as -21! returns empty dictionary in this case)
+.compress.cfg.emptyDict:`algorithm`logicalBlockSize`zipLevel`compressedLength`uncompressedLength!(3#0i),2#0Nj;
+
 
 / Default compression modes for each compression type supported within kdb+
 .compress.defaults:(`symbol$())!();
@@ -49,7 +52,7 @@
     splayCols:.compress.i.getColumns splayPath;
 
     compressStats:-21!/:` sv/: splayPath,/:splayCols;
-    compressStats:(`algorithm`logicalBlockSize`zipLevel!0 0 0i) ^/: compressStats;
+    compressStats:.compress.cfg.emptyDict ^/: compressStats;
 
     statsTbl:.compress.cfg.schemas[`infoSplay] upsert compressStats;
     statsTbl:update column:splayCols from statsTbl;
