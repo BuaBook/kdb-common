@@ -15,6 +15,13 @@
 .log.cfg.loggers[`.log.loggers.json]:  { (not ""~getenv`KDB_LOG_JSON) | `logJson in key .cargs.get[] };
 .log.cfg.loggers[`.log.loggers.basic]: { 1b };
 
+/ The formatting functions that take the logging level and the raw message and provide an output ready for printing by the logger.
+/ NOTE: Any custom formatter must also support the slf4j-style parameterised logging
+/ NOTE 2: The 'pattern' formatter is used when a logging format pattern (in '.log.cfg.format') has been specified
+.log.cfg.formatters:()!();
+.log.cfg.formatters[`default]:`.log.formatter.default;
+.log.cfg.formatters[`pattern]:`.log.formatter.pattern;
+
 / The available patterns for logging
 / NOTE: "l" and "m" cannot be modified - these will always be the log level and the message respectively
 .log.cfg.patterns:(`char$())!();
@@ -104,16 +111,17 @@
 /  @see .log.cfg.loggers
 /  @see .log.current.logger
 /  @see .log.current.formatter
+/  @see .log.cfg.formatters
 /  @see .log.setLevel
 .log.setLogger:{
     logger:first where .log.cfg.loggers@\:(::);
 
     .log.current[`logger]:logger;
-    .log.current[`formatter]:`.log.formatter.default;
+    .log.current[`formatter]:.log.cfg.formatters`default;
 
     if[0 < count .log.cfg.format;
         .log.i.parsePattern[];
-        .log.current[`formatter]:`.log.formatter.pattern;
+        .log.current[`formatter]:.log.cfg.formatters`pattern;
     ];
 
     .log.setLevel .log.current`level;
