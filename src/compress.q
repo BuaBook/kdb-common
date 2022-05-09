@@ -144,14 +144,15 @@
     compressCfg:update empty:0 = count first .Q.V sourceSplayPath from compressCfg;
     compressCfg:update inplace:source = target from compressCfg;
 
-    compressCfg:update writeMode:`compress`copy compressed from compressCfg;
-    compressCfg:update writeMode:`ignore from compressCfg where inplace, writeMode = `copy;
-
     $[any compressCfg`empty;
-        compressCfg:update writeMode:`copy from compressCfg where not writeMode = `ignore;
+        compressCfg:update writeMode:`copy from compressCfg;
     options`recompress;
-        compressCfg:update writeMode:`compress from compressCfg
+        compressCfg:update writeMode:`compress from compressCfg;
+    / else
+        compressCfg:update writeMode:`compress`copy compressed from compressCfg
     ];
+
+    compressCfg:update writeMode:`ignore from compressCfg where inplace, writeMode = `copy;
 
     compressCols:exec column from compressCfg where writeMode = `compress;
 
