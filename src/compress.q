@@ -281,5 +281,5 @@
 
 /  @returns (SymbolList) Columns in the table order (as defined in '.d') with any additional columns for nested lists appended on the end
 .compress.i.getColumns:{[splayPath]
-    :cols[splayPath] union .file.ls[splayPath] except `.d;
+    :cols[splayPath] union raze .file.find[; splayPath] each "*",/:.compress.cfg.nestedListSuffixes;
  };
