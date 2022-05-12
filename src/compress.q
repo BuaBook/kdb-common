@@ -213,7 +213,12 @@
 /  @see .compress.cfg.compressDefaults
 /  @see .compress.splay
 .compress.partition:{[sourceRoot; targetRoot; partVal; tbls; compressType; options]
+    tbls:(),tbls;
     options:.compress.cfg.compressDefaults ^ options;
+
+    if[not .type.isSymbolList tbls;
+        '"IllegalArgumentException";
+    ];
 
     srcPartPath:.file.hdb.qPar[sourceRoot; partVal];
     tgtPartPath:.file.hdb.qPar[targetRoot; partVal];
@@ -233,7 +238,7 @@
 
     srcTables:.file.ls srcPartPath;
 
-    if[.type.isSymbolList tbls;
+    if[not `COMP_ALL in tbls;
         srcTables:tbls inter srcTables;
     ];
 
