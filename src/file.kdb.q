@@ -76,7 +76,7 @@
 
     $[.file.kdb.cfg.atomOrList < fileType;
         :1;
-    11h = fileType & 0 < lengthBytes;
+    (11h = fileType) & 0 < lengthBytes;
         :`long$lengthBytes;
     / else
         :count get file
