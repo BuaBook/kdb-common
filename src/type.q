@@ -132,12 +132,17 @@
     :type[x] in -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 -14 -15 -16 -17 -18 -19h;
  };
 
+/ Equivalent any of '.type.isMixedList' / '.type.isTypedList' / '.type.isAnymap' / '.type.isNestedList' returning true
 .type.isList:{
-    :type[x] in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19h;
+    :type[x] in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96h;
  };
 
 .type.isTypedList:{
     :type[x] in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19h;
+ };
+
+.type.isNestedList:{
+    :type[x] in 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96h;
  };
 
 .type.isDistinct:{
