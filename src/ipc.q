@@ -21,6 +21,10 @@
 / for logging with asterisks. If true, the plain-text password will be logged
 .ipc.cfg.logPasswordsDuringConnect:0b;
 
+/ If enabled, any connection attempt that is made to a process on the local server will be re-routed via Unix Domain Sockets
+/ rather than localhost TCP (only on supported Operating Systems)
+.ipc.cfg.forceUnixDomainSocketsForLocalhost:1b;
+
 
 / Provides current state of all connections that were initiated by an external process. This will
 / only be populated if .ipc.cfg.enableInboundConnTracking is enabled on library initialisation
@@ -33,11 +37,29 @@
 /  @see .ipc.connectWithTimeout
 .ipc.outbound:`handle xkey flip `handle`targetHostPort`connectTime!"ISP"$\:();
 
+/ The Operating Systems that support Unix Domain Sockets
+.ipc.udsSupportedOs:`l`v`m;
+
+/ List of host names / IP addresses that are always classified as 'local' and therefore should default to UDS if enabled
+/ On library initialisation, additional hosts are added
+.ipc.localhostAddresses:`localhost`127.0.0.1;
+
+/ Combination of '.ipc.cfg.forceUnixDomainSocketsForLocalhost' and if the current OS supports UDS
+/  @see .ipc.init
+.ipc.udsEnabled:0b;
+
 
 .ipc.init:{
     if[.ipc.cfg.enableInboundConnTracking;
         .ipc.i.enableInboundConnTracking[];
     ];
+
+    .ipc.localhostAddresses:.ipc.localhostAddresses union .z.h,.Q.host[.z.a],.convert.ipOctalToSymbol each (.z.a; .Q.addr .z.h);
+    .log.if.debug ("Local host names and IP addresses: {}"; .ipc.localhostAddresses);
+
+    .ipc.udsEnabled:.ipc.cfg.forceUnixDomainSocketsForLocalhost & (`$first string .z.o) in .ipc.udsSupportedOs;
+
+    .log.if.info ("IPC library initialised [ UDS Enabled: {} ]"; `no`yes .ipc.udsEnabled);
  };
 
 
@@ -89,9 +111,23 @@
     0 > timeout;
         '"IllegalArgumentException"
     ];
-
+    
     hostPort:.type.ensureHostPortSymbol hostPort;
 
+    if[.ipc.udsEnabled;
+        hpSplit:":" vs string hostPort;
+        host:`localhost^`$hpSplit 1;
+
+        if[host in .ipc.localhostAddresses;
+            udsHostPort:`$":unix://",":" sv 2_ hpSplit;
+        ];
+
+        if[0 < count udsHostPort;
+            .log.if.debug ("Host/port translated to Unix Domain Socket [ Original: {} ] [ Now: {} ]"; hostPort; udsHostPort);
+            hostPort:udsHostPort;
+        ];
+    ];
+    
     logHostPort:string hostPort;
     logTimeout:$[timeout in 0 0Wi; "waiting indefinitely"; "timeout ",string[timeout]," ms"];
 
