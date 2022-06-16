@@ -62,9 +62,16 @@
     :.ipc.connectWithTimeout[hostPort;::];
  };
 
+/ Open a connection to the specified target host/port and allow waiting indefinitely until the process responds
+/  @param hostPort (HostPort) The target process to connect to
+/  @return (Integer) The handle to that process if the connection is successful
+/  @see .ipc.connectWithTimeout
+.ipc.connectWait:{[hostPort]
+    :.ipc.connectWithTimeout[hostPort; 0];
+ };
+
 / Open a connection to the specified target host/port with a maximum timeout period.
-/ NOTE: Passwords can be configured to not be printed to via logging. However, the password will always be present
-/ in .ipc.outbound
+/ NOTE: Passwords can be configured to not be printed to via logging
 /  @param hostPort (HostPort) The target process to connect to
 /  @param timeout (Integer) The maximum time to wait for a connection. Pass generic null to use the default
 /  @return (Integer) The handle to that process if the connection is successful
@@ -77,11 +84,16 @@
         '"IllegalArgumentException";
     ];
 
-    if[.util.isEmpty timeout;
+    $[.util.isEmpty timeout;
         timeout:.ipc.cfg.defaultConnectTimeout;
+    0 > timeout;
+        '"IllegalArgumentException"
     ];
 
-    logHostPort:string .type.ensureHostPortSymbol hostPort;
+    hostPort:.type.ensureHostPortSymbol hostPort;
+
+    logHostPort:string hostPort;
+    logTimeout:$[timeout in 0 0Wi; "waiting indefinitely"; "timeout ",string[timeout]," ms"];
 
     if[not .ipc.cfg.logPasswordsDuringConnect;
         if[4 = count where ":" = string hostPort;
@@ -92,7 +104,7 @@
         ];
     ];
 
-    .log.if.info "Attempting to connect to ",logHostPort," (timeout ",string[timeout]," ms)";
+    .log.if.info ("Attempting to connect to {} ({})"; logHostPort; logTimeout);
 
     h:@[hopen; (hostPort; timeout); { (`CONN_FAIL;x) }];
 
@@ -114,9 +126,9 @@
 /  @see .q.hclose
 .ipc.disconnect:{[h]
     closeRes:@[hclose;h;{ (`FAILED_TO_CLOSE;x) }];
-    
+
     .ipc.i.connectionClosed h;
-    
+
     if[`FAILED_TO_CLOSE~first closeRes;
         .log.if.warn "Failed to close handle ",string[h],". Error - ",last closeRes;
         :0b;
