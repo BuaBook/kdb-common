@@ -170,6 +170,22 @@
     ];
  };
 
+/  @returns (Symbol) A symbol reference to the function that called the function which called this function or 'anon-func' if an anonymous inner function
+.ns.getFunctionCaller:{
+    bt:.Q.btx .Q.Ll `;
+
+    caller:first bt[2][1];
+
+    $[("q";`) ~ caller;
+        caller:`$"q-prompt";
+    0 = count caller;
+        caller:`$"anon-func";
+    / else
+        caller:`$first caller
+    ];
+
+    :caller;
+ };
 
 /  @param func (Symbol|Function) A reference to a function or an actual function
 /  @returns (Function) Resolves the function reference such that a function is always returned
