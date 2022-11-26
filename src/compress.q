@@ -1,7 +1,7 @@
 // Disk Compression Functions
 // Copyright (c) 2021 Jaskirat Rajasansir
 
-.require.lib each `type`file`time;
+.require.lib each `type`file`time`util;
 
 
 / Schemas returned by .compress.getSplayStats, .compress.getPartitionStats, .compress.splay and .compress.partition
@@ -18,7 +18,8 @@
 /  - tgtParTxt (1b): 'par.txt' in target partition HDB root will be used (only with .compress.partition)
 /  - parallel (1b): Parallelise compression of columns within a splay if possible
 /  - dryrun (0b): Return table of what *would* be done based on the supplied parameters
-.compress.cfg.compressDefaults:`recompress`inplace`srcParTxt`tgtParTxt`parallel`dryrun!001110b;
+/  - gc (0b): Perform a garbage collection (via '.util.gc') after a splay compression
+.compress.cfg.compressDefaults:`recompress`inplace`srcParTxt`tgtParTxt`parallel`dryrun`gc!0011100b;
 
 / The file suffixes of the additional files stored by kdb+ for nested lists
 .compress.cfg.nestedListSuffixes:("#"; "##");
@@ -193,6 +194,10 @@
 
     / Copy the '.d' file at the end
     -19!(` sv sourceSplayPath,`.d; ` sv targetSplayPath,`.d),.compress.defaults`none;
+
+    if[options`gc;
+        .util.gc[];
+    ];
 
     .log.if.info ("Splay table compression complete [ Source: {} ] [ Target: {} ] [ Compression: {} ] [ Time Taken: {} ]"; sourceSplayPath; targetSplayPath; compressType; .time.now[] - st);
 
