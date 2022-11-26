@@ -1,5 +1,13 @@
 // Random Data Generation
-// Copyright (c) 2021 Jaskirat Rajasansir
+// Copyright (c) 2021 - 2022 Jaskirat Rajasansir
+
+
+/ If true, a handle to /dev/random will be kept open after the first call to any '.rand.dr' functions. If false, a handle will be opened for every call
+.rand.cfg.keepDevRandomOpen:0b;
+
+/ The cached handle to /dev/random, if '.rand.cfg.devRandomHandle' is set to true
+.rand.cfg.devRandomHandle:0Ni;
+
 
 / Some sensible maximum values for random data generation:
 /  - Date & times: 2030.01.01 - bring the maximum date in a bit
@@ -36,12 +44,28 @@
 
 /  @param (Integer) The number of bytes to return from the OS /dev/random file
 /  @returns (ByteList) The random data from the OS /dev/random file
+/  @see .rand.cfg.keepDevRandomOpen
+/  @see .rand.cfg.devRandomHandle
 .rand.dr.getBytes:{[bNum]
-    devRandom:hopen `:fifo:///dev/random;
+    devRandom:0Ni;
+
+    if[.rand.cfg.keepDevRandomOpen;
+        if[null .rand.cfg.devRandomHandle;
+            .rand.cfg.devRandomHandle:hopen `:fifo:///dev/random;
+        ];
+
+        devRandom:.rand.cfg.devRandomHandle;
+    ];
+
+    if[not .rand.cfg.keepDevRandomOpen;
+        devRandom:hopen `:fifo:///dev/random;
+    ];
 
     bytes:read1 (devRandom; bNum);
 
-    hclose devRandom;
+    if[not .rand.cfg.keepDevRandomOpen;
+        hclose devRandom;
+    ];
 
     :bytes;
  };
