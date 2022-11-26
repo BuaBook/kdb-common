@@ -32,3 +32,41 @@
 
     :flip rows?/:.rand.types type each flip schema;
  };
+
+
+/  @param (Integer) The number of bytes to return from the OS /dev/random file
+/  @returns (ByteList) The random data from the OS /dev/random file
+.rand.dr.getBytes:{[bNum]
+    devRandom:hopen `:fifo:///dev/random;
+
+    bytes:read1 (devRandom; bNum);
+
+    hclose devRandom;
+
+    :bytes;
+ };
+
+/  @returns (Short) A short generated from /dev/random data
+.rand.dr.short:{
+    :.rand.dr.i.get 2;
+ };
+
+/  @returns (Integer) An integer generated from /dev/random data
+.rand.dr.int:{
+    :.rand.dr.i.get 4;
+ };
+
+/  @returns (Long) A long generated from /dev/random data
+.rand.dr.long:{
+    :.rand.dr.i.get 8;
+ };
+
+/  @returns (GUID) A GUID generated from /dev/random data
+.rand.dr.guid:{
+    :.rand.dr.i.get 16;
+ };
+
+
+.rand.dr.i.get:{[bytes]
+    :0x0 sv .rand.dr.getBytes bytes;
+ };
