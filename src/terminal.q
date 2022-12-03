@@ -1,5 +1,5 @@
 // Terminal (Console) Management
-// Copyright (c) 2020 Sport Trades Ltd
+// Copyright (c) 2020 Sport Trades Ltd, 2020 - 2022 Jaskirat Rajasansir
 
 // Documentation: https://github.com/BuaBook/kdb-common/wiki/terminal.q
 
@@ -10,12 +10,30 @@
 / adjust it if they are not in sync
 .terminal.cfg.trackSizeChange:1b;
 
+/ If enabled, and '.terminal.cfg.trackSizeChange' is enabled, any console size specified via '-c' on the command line will
+/ be used as the smallest the terminal window will be resized to
+.terminal.cfg.setMinWithCommandLineArg:1b;
+
 / The default '.z.pi' handler to parse standard input. This seems to give an equivalent of the default handler when
 / '.z.pi' is not set.
 .terminal.cfg.defaultZPi:{ 1 .Q.s value x; };
 
 
+.terminal.cmdLineConsoleSize:0N 0Ni;
+
+
 .terminal.init:{
+    if[.terminal.cfg.setMinWithCommandLineArg;
+        .require.lib`cargs;
+
+        args:.cargs.getWithInternal[];
+
+        if[`c in key args;
+            .terminal.cmdLineConsoleSize:"I"$" " vs args`c;
+            .log.info ("Minimum console size specified via '-c' command line argument [ Minimum Size: {} ]"; .terminal.cmdLineConsoleSize);
+        ];
+    ];
+
     if[.terminal.cfg.trackSizeChange & .terminal.isInteractive[];
         .log.if.info "Enabling terminal size change tracking on interactive terminal";
         .terminal.i.enableSizeTracking[];
@@ -24,15 +42,23 @@
 
 
 / Gets the current terminal size and changes the kdb console size if it has changed
+/  @see .terminal.cmdLineConsoleSize
 /  @see .os.getTerminalSize
 /  @see system "c"
 .terminal.setToCurrentSize:{
     termSize:.os.getTerminalSize[];
+    termSizeInt:"I"$" " vs termSize;
 
     oldTermSize:system "c";
 
+    / If either the columns or lines is smaller than the console size specified via command line, don't change
+    if[any termSizeInt < .terminal.cmdLineConsoleSize;
+        termSize:" " sv string .terminal.cmdLineConsoleSize;
+        termSizeInt:.terminal.cmdLineConsoleSize;
+    ];
+
     / If the console size is the same, just return
-    if[oldTermSize ~ "I"$" " vs termSize;
+    if[oldTermSize ~ termSizeInt;
         :(::);
     ];
 
