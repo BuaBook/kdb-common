@@ -192,8 +192,10 @@
     compressFunc:.compress.i.file[compressType;];
     compressTimes:((each; peach) parallel)[compressFunc; delete from compressCfg where writeMode = `ignore];
 
-    / Copy the '.d' file at the end
-    -19!(` sv sourceSplayPath,`.d; ` sv targetSplayPath,`.d),.compress.defaults`none;
+    / Copy the '.d' file at the end only if compressing to a different location (not 'inplace')
+    if[0 = count where compressCfg`inplace;
+        -19!(` sv sourceSplayPath,`.d; ` sv targetSplayPath,`.d),.compress.defaults`none;
+    ];
 
     if[options`gc;
         .util.gc[];
