@@ -75,7 +75,7 @@
     rawTermSize:trim .os.run[`terminalSize; ""];
     termSize:"";
 
-    $[`l = .os.type;
+    $[.os.type in `l`m;
         termSize:" " vs first rawTermSize;
     `w = .os.type;
         termSize:trim last each ":" vs/: rawTermSize raze where each rawTermSize like/: ("Lines:*"; "Columns:*")
