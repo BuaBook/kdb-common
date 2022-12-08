@@ -156,11 +156,17 @@
         / If in debug mode, execute init function without try/catch
         $[`boolean$system"e";
             initRes:initF (::);
-            initRes:@[initF;::;{ (`INIT_FUNC_ERROR;x) }]
+          3.5 <= .z.K;
+            initRes:.Q.trp[initF;::;{ `isError`backtrace`errorMsg!(`INIT_FUNC_ERROR; .Q.sbt y; x) }];
+          / else
+            initRes:@[initF;::;{ `isError`errorMsg!(`INIT_FUNC_ERROR; x) }]
         ];
 
         if[`INIT_FUNC_ERROR~first initRes;
             .log.if.error "Init function (",string[initFname],") failed to execute successfully [ Lib: ",string[lib]," ]. Error - ",last initRes;
+            if[`backtrace in key initRes;
+                -1 initRes`backtrace;
+            ];
             '"LibraryInitFailedException (",string[initFname],")";
         ];
 
