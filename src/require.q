@@ -119,10 +119,15 @@
 
     {
         .log.if.info "Loading ",x;
-        loadRes:@[system;"l ",x;{ (`LOAD_FAILURE;x) }];
+        loadRes:.require.i.protectedExecute[system; "l ",x; `LOAD_FAILURE];
 
         if[`LOAD_FAILURE~first loadRes;
             .log.if.error "Library file failed to load! [ File: ",x," ]. Error - ",last loadRes;
+
+            if[`backtrace in key loadRes;
+                .log.if.error "Backtrace: \n",loadRes`backtrace;
+            ];
+
             '"LibraryLoadException";
         ];
     } each 1_/:string libFiles;
@@ -153,14 +158,15 @@
     if[not `NO_INIT_FUNC~initF;
         .log.if.info "Library initialisation function detected [ Func: ",string[initFname]," ]";
 
-        / If in debug mode, execute init function without try/catch
-        $[`boolean$system"e";
-            initRes:initF (::);
-            initRes:@[initF;::;{ (`INIT_FUNC_ERROR;x) }]
-        ];
+        initRes:.require.i.protectedExecute[initF; ::; `INIT_FUNC_ERROR];
 
         if[`INIT_FUNC_ERROR~first initRes;
             .log.if.error "Init function (",string[initFname],") failed to execute successfully [ Lib: ",string[lib]," ]. Error - ",last initRes;
+
+            if[`backtrace in key initRes;
+                .log.if.error "Backtrace:\n",initRes`backtrace;
+            ];
+
             '"LibraryInitFailedException (",string[initFname],")";
         ];
 
@@ -218,6 +224,18 @@
     { .if.setImplementationsFor[x`lib; flip `lib _ x] } each requiredIfs;
 
     .require.lib`if;
+ };
+
+/ Protected execution wrapper for 'require'. It will run unprotected if '-e 1' / '-e 2' is specified. Otherwise it returns the same
+/ format as '.ns.protectedExecute', with backtrace provided if running kdb 3.5 or later
+.require.i.protectedExecute:{[func; args; errSym]
+    $[`boolean$system"e";
+        :func args;
+    3.5 <= .z.K;
+        :.Q.trp[func; args; {[errSym; errMsg; bt] `isError`backtrace`errorMsg!(errSym; .Q.sbt bt; errMsg) }[errSym;;]];
+    / else
+        :@[func; args; {[errSym; errMsg] (errSym; errMsg) }[errSym;]]
+    ];
  };
 
 / Supports slf4j-style parameterised logging for improved logging performance even without a logging library
