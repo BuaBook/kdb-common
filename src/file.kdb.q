@@ -27,6 +27,13 @@
 .file.kdb.cfg.bytes,:`magic`type`attr`length!(0xfe20; 2; 3; 8 + til 8);
 .file.kdb.cfg.bytes,:`magic`type`attr`length!enlist[0xfd20],(4096 - 16) + (2; 3; 8 + til 8);
 
+/ The start byte for the sym enumeration target (e.g. 'sym')
+.file.kdb.cfg.symEnumByteStart:()!`int$();
+.file.kdb.cfg.symEnumByteStart[enlist 0xfd20]:16;
+
+/ The maximum number of bytes to read for the sym enumeration target
+.file.kdb.cfg.symEnumReadBytes:64;
+
 
 /  @returns (Dict) kdb file information summary based on the other functions in this namespace
 / TODO: Optimise further to only do a single read of the header bytes
@@ -56,7 +63,6 @@
     :.file.kdb.cfg.attributes header .file.kdb.cfg.bytes[header 0 1]`attr;
  };
 
-
 / Optimised element length function. Only requires reading the first 4096 bytes of the specified file to return the length
 / (instead of "count get").
 / NOTE: Optimised code path works for all atom and list types
@@ -83,4 +89,23 @@
     ];
  };
 
+/ Optimised retrieval of the enumeration target for symbols
+/ NOTE: Currently causes 2 4KB reads of the file header to get the file type (via .file.kdb.getType) and then to extract the symbol enumeration target
+/  @param file (FilePath) The file to return the enumeration target
+/  @returns (Symbol) The enumeration target file or null symbol if the file is a symbol file with no enumeration
+/  @throws FileIsNotAnEnumerationException If the supplied file path target is not a symbol list or enumerated symbol list
+.file.kdb.getSymEnumerationTarget:{[file]
+    fileType:.file.kdb.getType file;
 
+    $[11h = fileType;
+        :`;
+    not fileType within 20 76h;
+        '"FileIsNotAnEnumerationException"
+    ];
+
+    header:read1 (file; 0; .file.kdb.cfg.headerLength);
+
+    enumTgtBytes:header .file.kdb.cfg.symEnumByteStart[header 0 1] + til .file.kdb.cfg.symEnumReadBytes;
+    enumTgtBytes:enumTgtBytes except 0x00;
+    :`$`char$enumTgtBytes;
+ };
