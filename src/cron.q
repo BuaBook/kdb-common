@@ -199,6 +199,24 @@
     :.cron.add[func;args;`repeat;startTime;0Wp;interval];
  };
 
+/ Schedules a job that repeats forever but only if there isn't an active job with the same function and arguments
+/  @param uFunc (Symbol) Symbol reference to the function to execute
+/  @param uArgs () Any arguments that are required to execute the function. Pass generic null (::) for no arguments
+/  @param startTime (Timestamp) The first time the job will be run
+/  @param interval (Timespan) The interval at which repeating jobs should recur. Pass null (0Nn) for one time jobs
+/  @returns (Long) The job ID either of the existing job, or the newly scheduled job
+/  @see .cron.addRepeatForeverJob
+.cron.addUniqueRepeatForeverJob:{[uFunc;uArgs;startTime;interval]
+    match:exec from .cron.jobs where func = uFunc, args ~\: uArgs, not 0Wp = nextRunTime;
+
+    if[not null match`id;
+        .log.if.info ("Cron job with matching function and arguments is active. Not adding job [ Function: {} ] [ Arguments: {} ]"; uFunc; uArgs);
+        :match`id;
+    ];
+
+    :.cron.addRepeatForeverJob[uFunc; uArgs; startTime; interval];
+ };
+
 / Shortcut function to add a job that repeats until a specified time
 /  @param func (Symbol) Symbol reference to the function to execute
 /  @param args () Any arguments that are required to execute the function. Pass generic null (::) for no arguments
@@ -208,6 +226,24 @@
 /  @see .cron.add
 .cron.addRepeatUntilTimeJob:{[func;args;startTime;endTime;interval]
     :.cron.add[func;args;`repeat;startTime;endTime;interval];
+ };
+
+/ Schedules a job that repeats until the specified time but only if there isn't an active job with the same function and arguments
+/  @param uFunc (Symbol) Symbol reference to the function to execute
+/  @param uArgs () Any arguments that are required to execute the function. Pass generic null (::) for no arguments
+/  @param startTime (Timestamp) The first time the job will be run
+/  @param endTime (Timestamp) The time to finish a repeating job executing. Pass null (0Np) to repeat forever or for one time jobs
+/  @param interval (Timespan) The interval at which repeating jobs should recur. Pass null (0Nn) for one time jobs
+/  @see .cron.addRepeatUntilTimeJob
+.cron.addUniqueRepeatUntilTimeJob:{[uFunc;uArgs;startTime;endTime;interval]
+    match:exec from .cron.jobs where func = uFunc, args ~\: uArgs, not 0Wp = nextRunTime;
+
+    if[not null match`id;
+        .log.if.info ("Cron job with matching function and arguments is active. Not adding job [ Function: {} ] [ Arguments: {} ]"; uFunc; uArgs);
+        :match`id;
+    ];
+
+    :.cron.addRepeatUntilTimeJob[uFunc; uArgs; startTime; endTime; interval];
  };
 
 / Cancels the specified job from running. Run once jobs will never run and repeating jobs will no longer run
