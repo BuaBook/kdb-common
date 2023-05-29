@@ -62,5 +62,5 @@
 
     .log.if.info "Saving CSV file [ Target: ",string[path]," ] [ Table Length: ",string[count data]," ]";
 
-    :path 0: "," 0: data;
+    :path 0: .q.csv 0: data;
  };
