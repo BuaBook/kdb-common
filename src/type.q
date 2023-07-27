@@ -156,7 +156,7 @@
         :x;
     ];
 
-    if[.type.isNumber[x] | .type.isDateOrTime[x] | .type.isBoolean x;
+    if[.type.isNumber[x] | .type.isDateOrTime[x] | .type.isBoolean[x] | .type.isGuid x;
         :`$string x;
     ];
 
