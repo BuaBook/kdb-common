@@ -72,7 +72,7 @@
 .util.pivot:{[t;c;r;d]
     colData:?[t;();();(distinct;c)];
 
-    pvCols: {[t;c;r;cd;d] 
+    pvCols: {[t;c;r;cd;d]
                 :r xkey ?[t;enlist (=;c;$[.type.isSymbol cd;enlist;::] cd);0b;(r,.type.ensureSymbol cd)!(r,d)];
             }[t;c;r;;d] each colData;
 
@@ -88,7 +88,7 @@
     if[.util.isEmpty enumCols;
         :t;
     ];
-    
+
     :@[t;enumCols;get];
  };
 
@@ -112,7 +112,7 @@
     :?[t;();0b;selectCols];
  };
 
-/ @returns (Symbol) OS independent process architecture 
+/ @returns (Symbol) OS independent process architecture
 .util.getProcessArchitecture:{
     bits:"I"$-2#string .z.o;
 
@@ -157,7 +157,7 @@ k).util.showNoLimit:{
     ];
 
     :tbls!count each get each tbls;
- }; 
+ };
 
 / Removes all data from the specified root namespace table
 /  @param x (Symbol) The table to clear
@@ -173,7 +173,7 @@ k).util.showNoLimit:{
 /  @param x (List) A list to check if all values are unique
 /  @returns (Boolean) True if the specified list has only unique values
 .util.isDistinct:.type.isDistinct;
- 
+
 / String find and replace. If multiple 'find' arguments are supplied the equivalent number of
 / replace arguments must also be specified
 /  @param startString (String) The string to find and replace within
