@@ -26,7 +26,25 @@
 /  @param p (Integer) The precision to round to
 /  @param x (Real|Float) The value to round
 /  @returns (Real|Float) The rounded value
-.util.round:{[p;x](`int$n*x)%n:prd p#10};
+.util.round:{[p;x](`long$n*x)%n:prd p#10};
+
+/ Round integers to the specified number of significant figures
+/  @param p (Integer) The precision to round to
+/  @param x (Short|Integer|Long|Real|Float) The value to round
+/  @returns (Short|Integer|Long|Real|Float) The rounded value returned in the same type as provided
+/  @see .util.round
+.util.roundSigFig:{[p;x]
+    dec:string[x]?".";
+
+    srcType:.Q.t abs type x;
+
+    if[p <= dec;
+        n:prd (dec - p)#10;
+        :srcType $ (`long$x % n) * n;
+    ];
+
+    :srcType $ .util.round[p - dec; x];
+ };
 
 / Extended version of the standard trim function. As well as removing spaces, it also removes
 / new line and tab characters
