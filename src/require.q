@@ -1,5 +1,5 @@
 // Code Loading Library
-// Copyright (c) 2016 - 2017 Sport Trades Ltd, (c) 2020 - 2021 Jaskirat Rajasansir
+// Copyright (c) 2016 - 2017 Sport Trades Ltd, (c) 2020 - 2023 Jaskirat Rajasansir
 
 // Documentation: https://github.com/BuaBook/kdb-common/wiki/require.q
 
@@ -7,7 +7,7 @@
 .require.fileSuffixes:(".q";".k";".*.q";".*.k";".q_";".*.q_");
 
 / Table containing the state of each library loaded via require
-.require.loadedLibs:`lib xkey flip `lib`loaded`loadedTime`inited`initedTime`files!"SBPBP*"$\:();
+.require.loadedLibs:`lib xkey flip `lib`loaded`loadedTime`inited`initedTime`forced`files!"SBPBPB*"$\:();
 
 / Root folder to search for libraries
 .require.location.root:`;
@@ -43,7 +43,7 @@
 
     .require.i.setDefaultInterfaces[];
 
-    (.require.markLibAsLoaded;.require.markLibAsInited)@\:`require;
+    .require[`markLibAsLoaded`markLibAsInited] .\: (`require; 0b);
 
     / If file tree has already been specified, don't overwrite
     if[.require.location.discovered~enlist`;
@@ -65,7 +65,7 @@
         :(::);
     ];
 
-    .require.i.load lib;
+    .require.i.load[lib; 0b];
  };
 
 / Loads the specified libary and initialises it. Checks loaded and initialised state to prevent
@@ -83,7 +83,7 @@
         operations:operations except `load;
     ];
 
-    .require.i[operations] @\: lib;
+    .require.i[operations] .\: (lib; 0b);
  };
 
 / Loads the sepcified library and initialises it regardless of the current loaded and initialised state
@@ -92,12 +92,12 @@
 /  @see .require.i.init
 .require.libForce:{[lib]
     if[lib in key .require.loadedLibs;
-        libInfo:.require.loadedLibs;
+        libInfo:.require.loadedLibs lib;
 
         .log.if.info ("Force reloading library [ Library: {} ] [ Already Loaded: {} ] [ Already Initialised: {} ]"; lib; `no`yes libInfo`loaded; `no`yes libInfo`inited);
     ];
 
-    .require.i[`load`init] @\: lib;
+    .require.i[`load`init] .\: (lib; 1b);
  };
 
 .require.rescanRoot:{
@@ -109,22 +109,22 @@
 / Marks the specified library as loaded in the loaded libraries table. NOTE: This
 / function does not actually do the load
 /  @see .require.loadedLibs
-.require.markLibAsLoaded:{[lib]
-    .require.loadedLibs[lib]:`loaded`loadedTime!(1b;.z.P);
+.require.markLibAsLoaded:{[lib; forced]
+    .require.loadedLibs[lib]:`loaded`loadedTime`forced!(1b; .z.P; forced);
  };
 
 / Marks the specified library as initialised in the loaded libraries table. NOTE:
 / This function does not actually do the init
 /  @see .require.loadedLibs
-.require.markLibAsInited:{[lib]
-    .require.loadedLibs[lib]:`inited`initedTime!(1b;.z.P);
+.require.markLibAsInited:{[lib; forced]
+    .require.loadedLibs[lib]:`inited`initedTime`forced!(1b; .z.P; forced);
  };
 
 
 / Attempts to load the specified library
 /  @throws LibraryDoesNotExistException If no files are found for the specified library
 /  @throws LibraryLoadException If any of the library files fail to load
-.require.i.load:{[lib]
+.require.i.load:{[lib; force]
     .log.if.info "Loading library: ",string lib;
 
     libFiles:.require.i.findFiles[lib;.require.location.discovered];
@@ -149,7 +149,7 @@
         ];
     } each 1_/:string libFiles;
 
-    .require.markLibAsLoaded lib;
+    .require.markLibAsLoaded[lib; force];
     .require.loadedLibs[lib]:enlist[`files]!enlist libFiles;
  };
 
@@ -164,18 +164,19 @@
 / .*lib*.*stack*.init[] and executes if exists (if not present, ignored).
 /  @throws UnknownLibraryException If the library is not loaded
 /  @throws LibraryInitFailedException If the init function throws an exception
-.require.i.init:{[lib]
+.require.i.init:{[lib; force]
     if[not lib in key .require.loadedLibs;
         '"UnknownLibraryException";
     ];
 
     initFname:` sv `,lib,`init;
     initF:@[get;initFname;`NO_INIT_FUNC];
+    initArgs:enlist[`force]!enlist force;
 
     if[not `NO_INIT_FUNC~initF;
         .log.if.info "Library initialisation function detected [ Func: ",string[initFname]," ]";
 
-        initRes:.require.i.protectedExecute[initF; ::; `INIT_FUNC_ERROR];
+        initRes:.require.i.protectedExecute[initF; initArgs; `INIT_FUNC_ERROR];
 
         if[`INIT_FUNC_ERROR~first initRes;
             .log.if.error "Init function (",string[initFname],") failed to execute successfully [ Lib: ",string[lib]," ]. Error - ",last initRes;
@@ -187,7 +188,7 @@
             '"LibraryInitFailedException (",string[initFname],")";
         ];
 
-        .require.markLibAsInited lib;
+        .require.markLibAsInited[lib; force];
 
         .log.if.info "Initialised library: ",string lib;
     ];
