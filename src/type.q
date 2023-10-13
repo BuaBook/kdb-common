@@ -91,7 +91,7 @@
  };
 
 .type.isEnumeration:{
-    :type[x] within 20 76h;
+    :abs[type x] within 20 76h;
  };
 
 .type.isAnymap:{
