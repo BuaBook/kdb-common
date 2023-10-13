@@ -73,14 +73,31 @@
 /  @see .require.i.load
 /  @see .require.i.init
 .require.lib:{[lib]
+    operations:`load`init;
+
     if[lib in key .require.loadedLibs;
-        $[.require.loadedLibs[lib]`inited;
+        if[.require.loadedLibs[lib]`inited;
             :(::);
-            :.require.i.init lib
         ];
+
+        operations:operations except `load;
     ];
 
-    (.require.i.load;.require.i.init)@\:lib;
+    .require.i[operations] @\: lib;
+ };
+
+/ Loads the sepcified library and initialises it regardless of the current loaded and initialised state
+/ This should be used for reloading a stateless library without having to restart the kdb process
+/  @see .require.i.load
+/  @see .require.i.init
+.require.libForce:{[lib]
+    if[lib in key .require.loadedLibs;
+        libInfo:.require.loadedLibs;
+
+        .log.if.info ("Force reloading library [ Library: {} ] [ Already Loaded: {} ] [ Already Initialised: {} ]"; lib; `no`yes libInfo`loaded; `no`yes libInfo`inited);
+    ];
+
+    .require.i[`load`init] @\: lib;
  };
 
 .require.rescanRoot:{
