@@ -91,13 +91,15 @@
 /  @see .require.i.load
 /  @see .require.i.init
 .require.libForce:{[lib]
-    if[lib in key .require.loadedLibs;
-        libInfo:.require.loadedLibs lib;
+    libInfo:.require.loadedLibs lib;
 
+    operations:lib,/:libInfo`loaded`inited;
+
+    if[libInfo`loaded;
         .log.if.info ("Force reloading library [ Library: {} ] [ Already Loaded: {} ] [ Already Initialised: {} ]"; lib; `no`yes libInfo`loaded; `no`yes libInfo`inited);
     ];
 
-    .require.i[`load`init] .\: (lib; 1b);
+    .require.i[`load`init] .' operations;
  };
 
 .require.rescanRoot:{
@@ -164,14 +166,19 @@
 / .*lib*.*stack*.init[] and executes if exists (if not present, ignored).
 /  @throws UnknownLibraryException If the library is not loaded
 /  @throws LibraryInitFailedException If the init function throws an exception
-.require.i.init:{[lib; force]
+/  @throws RequireReinitialiseAssertionError If 'reinit' is set to false, but the library is already initialised - this should not happen
+.require.i.init:{[lib; reinit]
     if[not lib in key .require.loadedLibs;
         '"UnknownLibraryException";
     ];
 
+    if[not[reinit] & .require.loadedLibs[lib]`inited;
+        '"RequireReinitialiseAssertionError";
+    ];
+
     initFname:` sv `,lib,`init;
     initF:@[get;initFname;`NO_INIT_FUNC];
-    initArgs:enlist[`force]!enlist force;
+    initArgs:enlist[`reinit]!enlist reinit;
 
     if[not `NO_INIT_FUNC~initF;
         .log.if.info "Library initialisation function detected [ Func: ",string[initFname]," ]";
@@ -188,7 +195,7 @@
             '"LibraryInitFailedException (",string[initFname],")";
         ];
 
-        .require.markLibAsInited[lib; force];
+        .require.markLibAsInited[lib; reinit];
 
         .log.if.info "Initialised library: ",string lib;
     ];
