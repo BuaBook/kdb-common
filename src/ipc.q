@@ -35,7 +35,7 @@
 / Provides current state of all outbound connections that are initiated using the functions within
 / this IPC library
 /  @see .ipc.connectWithTimeout
-.ipc.outbound:`handle xkey flip `handle`targetHostPort`connectTime!"ISP"$\:();
+.ipc.outbound:`handle xkey flip `handle`targetHostPort`connectTime`hostPortHash!"ISP*"$\:();
 
 / The Operating Systems that support Unix Domain Sockets
 .ipc.udsSupportedOs:`l`v`m;
@@ -111,8 +111,9 @@
     0 > timeout;
         '"IllegalArgumentException"
     ];
-    
+
     hostPort:.type.ensureHostPortSymbol hostPort;
+    hpHash:.Q.sha1 .type.ensureString hostPort;
 
     if[.ipc.udsEnabled;
         hpSplit:":" vs string hostPort;
@@ -127,7 +128,7 @@
             hostPort:udsHostPort;
         ];
     ];
-    
+
     logHostPort:string hostPort;
     logTimeout:$[timeout in 0 0Wi; "waiting indefinitely"; "timeout ",string[timeout]," ms"];
 
@@ -151,10 +152,17 @@
 
     .log.if.info "Successfully connected to ",logHostPort," on handle ",string h;
 
-    `.ipc.outbound upsert (h; `$logHostPort; .time.now[]);
+    `.ipc.outbound upsert (h; `$logHostPort; .time.now[]; hpHash);
 
     :h;
   };
+
+/  @returns (IntegerList) Any existing handles that match the specified host/port in '.ipc.outbound'
+/  @see .ipc.outbound
+.ipc.getHandlesFor:{[hostPort]
+    hpHash:.Q.sha1 string .type.ensureHostPortSymbol hostPort;
+    :exec handle from .ipc.outbound where hostPortHash ~\: hpHash;
+ };
 
 / Disconnects the specified handle
 /  @param h (Integer) The handle to disconnect
