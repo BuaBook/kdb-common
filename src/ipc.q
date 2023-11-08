@@ -1,5 +1,5 @@
 // Inter Process Communication Functionality
-// Copyright (c) 2017 Sport Trades Ltd
+// Copyright (c) 2017 Sport Trades Ltd, (c) 2020 - 2023 Jaskirat Rajasansir
 
 // Documentation: https://github.com/BuaBook/kdb-common/wiki/ipc.q
 
@@ -102,44 +102,18 @@
 /  @see .ipc.cfg.defaultConnectTimeout
 /  @see .ipc.cfg.logPasswordsDuringConnect
 .ipc.connectWithTimeout:{[hostPort;timeout]
-    if[not .type.isHostPort hostPort;
-        '"IllegalArgumentException";
-    ];
-
     $[.util.isEmpty timeout;
         timeout:.ipc.cfg.defaultConnectTimeout;
     0 > timeout;
         '"IllegalArgumentException"
     ];
 
-    hostPort:.type.ensureHostPortSymbol hostPort;
-    hpHash:.Q.sha1 .type.ensureString hostPort;
+    normalised:.ipc.i.normaliseHostPort hostPort;
 
-    if[.ipc.udsEnabled;
-        hpSplit:":" vs string hostPort;
-        host:`localhost^`$hpSplit 1;
-
-        if[host in .ipc.localhostAddresses;
-            udsHostPort:`$":unix://",":" sv 2_ hpSplit;
-        ];
-
-        if[0 < count udsHostPort;
-            .log.if.debug ("Host/port translated to Unix Domain Socket [ Original: {} ] [ Now: {} ]"; hostPort; udsHostPort);
-            hostPort:udsHostPort;
-        ];
-    ];
-
-    logHostPort:string hostPort;
+    hpHash:.Q.sha1 .type.ensureString normalised`original;
+    hostPort:normalised`toConnect;
+    logHostPort:normalised`toLog;
     logTimeout:$[timeout in 0 0Wi; "waiting indefinitely"; "timeout ",string[timeout]," ms"];
-
-    if[not .ipc.cfg.logPasswordsDuringConnect;
-        if[4 = count where ":" = string hostPort;
-            hpSplit:":" vs string hostPort;
-            hpSplit:@[hpSplit; 4; :; count[hpSplit 4]#"*"];
-
-            logHostPort:":" sv hpSplit;
-        ];
-    ];
 
     .log.if.info ("Attempting to connect to {} ({})"; logHostPort; logTimeout);
 
@@ -156,6 +130,40 @@
 
     :h;
   };
+
+.ipc.oneShot:{[hostPort; query]
+    :.ipc.oneShotWithTimeout[hostPort; ::; query];
+ };
+
+.ipc.oneShotWait:{[hostPort; query]
+    :.ipc.oneShotWithTimeout[hostPort; 0; query];
+ };
+
+.ipc.oneShotWithTimeout:{[hostPort; timeout; query]
+    $[.util.isEmpty timeout;
+        timeout:.ipc.cfg.defaultConnectTimeout;
+    0 > timeout;
+        '"IllegalArgumentException"
+    ];
+
+    normalised:.ipc.i.normaliseHostPort hostPort;
+
+    hostPort:normalised`toConnect;
+    logHostPort:normalised`toLog;
+    logTimeout:$[timeout in 0 0Wi; "waiting indefinitely"; "timeout ",string[timeout]," ms"];
+
+    .log.if.info ("Sending one-shot query to {} ({})"; logHostPort; logTimeout);
+    .log.if.debug ("Query: {}"; query);
+
+    res:.[`::; ((.type.ensureString hostPort; timeout); query); { (`ONE_SHOT_FAIL; x) }];
+
+    if[`ONE_SHOT_FAIL ~ first res;
+        .log.if.error ("One-shot query to {} failed. Error - {}"; logHostPort; last res);
+        '"OneShotFailedException (",logHostPort,")";
+    ];
+
+    :res;
+ };
 
 /  @returns (IntegerList) Any existing handles that match the specified host/port in '.ipc.outbound'
 /  @see .ipc.outbound
@@ -236,4 +244,41 @@
         .log.if.info "Outbound connection on handle ",string[h]," closed";
         delete from `.ipc.outbound where handle = h;
     ];
+ };
+
+
+.ipc.i.normaliseHostPort:{[hostPort]
+    if[not .type.isHostPort hostPort;
+        '"IllegalArgumentException";
+    ];
+
+    hostPort:.type.ensureHostPortSymbol hostPort;
+    connHostPort:hostPort;
+
+    if[.ipc.udsEnabled;
+        hpSplit:":" vs string hostPort;
+        host:`localhost^`$hpSplit 1;
+
+        if[host in .ipc.localhostAddresses;
+            udsHostPort:`$":unix://",":" sv 2_ hpSplit;
+        ];
+
+        if[0 < count udsHostPort;
+            .log.if.debug ("Host/port translated to Unix Domain Socket [ Original: {} ] [ Now: {} ]"; hostPort; udsHostPort);
+            connHostPort:udsHostPort;
+        ];
+    ];
+
+    logHostPort:string hostPort;
+
+    if[not .ipc.cfg.logPasswordsDuringConnect;
+        if[4 = count where ":" = string hostPort;
+            hpSplit:":" vs string hostPort;
+            hpSplit:@[hpSplit; 4; :; count[hpSplit 4]#"*"];
+
+            logHostPort:":" sv hpSplit;
+        ];
+    ];
+
+    :`original`toConnect`toLog!(hostPort; connHostPort; logHostPort);
  };
