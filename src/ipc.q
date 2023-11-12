@@ -95,15 +95,17 @@
 / Open a connection to the specified target host/port with a maximum timeout period.
 / NOTE: Passwords can be configured to not be printed to via logging
 /  @param hostPort (HostPort) The target process to connect to
-/  @param timeout (Integer) The maximum time to wait for a connection. Pass generic null to use the default
+/  @param timeout (Long) The maximum time to wait, in milliseconds, for a connection. Pass generic null to use the default
 /  @return (Integer) The handle to that process if the connection is successful
 /  @throws IllegalArgumentException If the host/port is not of the correct type
 /  @throws ConnectionFailedException If the connection to the process fails
 /  @see .ipc.cfg.defaultConnectTimeout
 /  @see .ipc.cfg.logPasswordsDuringConnect
 .ipc.connectWithTimeout:{[hostPort;timeout]
-    $[not .type.isLong timeout;
+    $[(::) ~ timeout;
         timeout:.ipc.cfg.defaultConnectTimeout;
+    not .type.isLong timeout;
+        '"IllegalArgumentException";
     0 > timeout;
         '"IllegalArgumentException"
     ];
@@ -150,15 +152,17 @@
 / Sends a one-shot query to the specified host/port with a specified connection timeout
 / NOTE: Passwords can be configured to not be printed to via logging
 /  @param hostPort (HostPort) The target process to connect to
-/  @param timeout (Integer) The maximum time to wait for a connection. Pass generic null to use the default
+/  @param timeout (Long) The maximum time to wait, in milliseconds, for a connection. Pass generic null to use the default
 /  @return () The result of the query executed on the remote process
 /  @throws IllegalArgumentException If the host/port is not of the correct type
 /  @throws ConnectionFailedException If the connection to the process fails
 /  @see .ipc.cfg.defaultConnectTimeout
 /  @see .ipc.cfg.logPasswordsDuringConnect
 .ipc.oneShotWithTimeout:{[hostPort; timeout; query]
-    $[not .type.isLong timeout;
+    $[(::) ~ timeout;
         timeout:.ipc.cfg.defaultConnectTimeout;
+    not .type.isLong timeout;
+        '"IllegalArgumentException";
     0 > timeout;
         '"IllegalArgumentException"
     ];
