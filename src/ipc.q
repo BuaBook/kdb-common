@@ -131,14 +131,31 @@
     :h;
   };
 
+/ Sends a one-shot query to the specified host/port with the default connection timeout
+/  @param hostPort (HostPort) The target process to connect to
+/  @param query (String|List) The query to send to the remote process
+/  @see .ipc.oneShotWithTimeout
 .ipc.oneShot:{[hostPort; query]
     :.ipc.oneShotWithTimeout[hostPort; ::; query];
  };
 
+/ Sends a one-shot query to the specified host/port and allow waiting indefinitely until the process responds
+/  @param hostPort (HostPort) The target process to connect to
+/  @param query (String|List) The query to send to the remote process
+/  @see .ipc.oneShotWithTimeout
 .ipc.oneShotWait:{[hostPort; query]
     :.ipc.oneShotWithTimeout[hostPort; 0; query];
  };
 
+/ Sends a one-shot query to the specified host/port with a specified connection timeout
+/ NOTE: Passwords can be configured to not be printed to via logging
+/  @param hostPort (HostPort) The target process to connect to
+/  @param timeout (Integer) The maximum time to wait for a connection. Pass generic null to use the default
+/  @return () The result of the query executed on the remote process
+/  @throws IllegalArgumentException If the host/port is not of the correct type
+/  @throws ConnectionFailedException If the connection to the process fails
+/  @see .ipc.cfg.defaultConnectTimeout
+/  @see .ipc.cfg.logPasswordsDuringConnect
 .ipc.oneShotWithTimeout:{[hostPort; timeout; query]
     $[not .type.isLong timeout;
         timeout:.ipc.cfg.defaultConnectTimeout;
@@ -246,7 +263,9 @@
     ];
  };
 
-
+/ Provides UNIX domain socket translation and password obfuscation
+/  @param (String|Symbol|HostPort) The host/port to normalise
+/  @return (Dict) 3 keys - 'original' -> the host/port as a symbol, 'toConnect' -> the host/port that should be passed to 'hopen', 'toLog' -> log equivalent of the host/port
 .ipc.i.normaliseHostPort:{[hostPort]
     if[not .type.isHostPort hostPort;
         '"IllegalArgumentException";
