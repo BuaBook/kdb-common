@@ -292,11 +292,11 @@
         ];
     ];
 
-    logHostPort:string hostPort;
+    logHostPort:string connHostPort;
 
     if[not .ipc.cfg.logPasswordsDuringConnect;
-        if[4 = count where ":" = string hostPort;
-            hpSplit:":" vs string hostPort;
+        if[4 = count where ":" = logHostPort;
+            hpSplit:":" vs logHostPort;
             hpSplit:@[hpSplit; 4; :; count[hpSplit 4]#"*"];
 
             logHostPort:":" sv hpSplit;
