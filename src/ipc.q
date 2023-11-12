@@ -3,7 +3,7 @@
 
 // Documentation: https://github.com/BuaBook/kdb-common/wiki/ipc.q
 
-.require.lib each `util`type`convert`time;
+.require.lib each `type`convert`time;
 
 
 / All connections made with this library use this value as the default timeout in milliseconds if
@@ -102,7 +102,7 @@
 /  @see .ipc.cfg.defaultConnectTimeout
 /  @see .ipc.cfg.logPasswordsDuringConnect
 .ipc.connectWithTimeout:{[hostPort;timeout]
-    $[.util.isEmpty timeout;
+    $[not .type.isLong timeout;
         timeout:.ipc.cfg.defaultConnectTimeout;
     0 > timeout;
         '"IllegalArgumentException"
@@ -140,7 +140,7 @@
  };
 
 .ipc.oneShotWithTimeout:{[hostPort; timeout; query]
-    $[.util.isEmpty timeout;
+    $[not .type.isLong timeout;
         timeout:.ipc.cfg.defaultConnectTimeout;
     0 > timeout;
         '"IllegalArgumentException"
