@@ -12,8 +12,11 @@
 / Commmand line argument to automatically load any additional libraries (comma separated) during initialisation
 .boot.cfg.loadLibsCmdArg:`$"load-libs";
 
+/ Command line argument to load a q file (not via 'require'), optionally execute a function (via '--script-func') and then exit
+.boot.cfg.scriptCmdArg:`script;
+
 / The libraries that are always loaded
-.boot.cfg.coreLibs:`log`cargs;
+.boot.cfg.coreLibs:`log`cargs`ns;
 
 
 / The root path of the kdb-common libraries
@@ -46,13 +49,43 @@
 
     .boot.args,:.cargs.getWithInternal[];
 
-    if[.boot.cfg.loadLibsCmdArg in key .boot.args;
-        additionalLibs:`$"," vs .boot.args .boot.cfg.loadLibsCmdArg;
-
-        if[0 < count additionalLibs except `;
-            .require.lib each additionalLibs;
-        ];
+    $[.boot.cfg.loadLibsCmdArg in key .boot.args;
+        .boot.inits.lib[];
+    .boot.cfg.scriptCmdArg in key .boot.args;
+        .boot.inits.script[]
     ];
+ };
+
+
+.boot.inits.lib:{
+    additionalLibs:`$"," vs .boot.args .boot.cfg.loadLibsCmdArg;
+
+    if[0 < count additionalLibs except `;
+        .require.lib each additionalLibs;
+    ];
+ };
+
+.boot.inits.script:{
+    qScript:hsym `$.boot.args .boot.cfg.scriptCmdArg;
+
+    if[not .type.isFile qScript;
+        .log.error ("Script specified via '--script' is invalid. Cannot load [ File: {} ]"; qScript);
+        "BootScriptDoesNotExistException";
+    ];
+
+    .log.info ("Loading script specified via '--script' [ File: {} ]"; qScript);
+
+    system "l ",1_ string qScript;
+
+    scriptFunc:`$.boot.args `$"script-func";
+
+    if[.ns.isSet scriptFunc;
+        .log.info ("Executing script function [ Function: {} ]"; scriptFunc);
+        get[scriptFunc] (`symbol$())!();
+    ];
+
+    .log.info "Script execution completed. Exiting process";
+    exit 0;
  };
 
 
