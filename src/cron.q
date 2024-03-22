@@ -16,6 +16,9 @@
 /  @see .cron.status
 .cron.cfg.logStatus:1b;
 
+/ If true and a cron job fails, the stack trace of where the failure occurred will be logged to the console
+.cron.cfg.printBacktraceOnFailure:1b;
+
 / The mode of operaton for the cron system. There are 2 supported modes:
 /  * ticking: Traditional timer system with the timer function running on a frequent interval
 /  * tickless: New approach to only 'tick' the timer  when the next job is due to run. Can reduce process load when infrequent jobs are run
@@ -328,11 +331,14 @@
 
     endTimer:.time.now[];
 
-    status:1b;
+    status:not .ns.const.pExecFailure ~ first result;
 
-    if[.ns.const.pExecFailure ~ first result;
-        .log.if.error "Cron job failed to execute [ Job ID: ",string[jobId]," ]. Error - ",last result;
-        status:0b;
+    if[not status;
+        $[.cron.cfg.printBacktraceOnFailure;
+            .log.if.error ("Cron job failed to execute [ Job ID: {} ]. Error - {}\n{}"; jobId; last result; result`backtrace);
+        / else
+            .log.if.error ("Cron job failed to execute [ Job ID: {} ]. Error - {}"; jobId; last result)
+        ];
 
         result:(`errorMsg`backtrace inter key result)#result;
     ];
