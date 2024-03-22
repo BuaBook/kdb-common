@@ -7,7 +7,7 @@
 .require.fileSuffixes:(".q";".k";".*.q";".*.k";".q_";".*.q_");
 
 / Table containing the state of each library loaded via require
-.require.loadedLibs:`lib xkey flip `lib`loaded`loadedTime`inited`initedTime`forced`files!"SBPBPB*"$\:();
+.require.loadedLibs:`lib xkey flip `lib`loaded`loadedTime`initExists`inited`initedTime`forced`files!"SBPBBPB*"$\:();
 
 / Root folder to search for libraries
 .require.location.root:`;
@@ -44,6 +44,7 @@
     .require.i.setDefaultInterfaces[];
 
     .require[`markLibAsLoaded`markLibAsInited] .\: (`require; 0b);
+    .require.loadedLibs[`require; `initExists]:1b;
 
     / If file tree has already been specified, don't overwrite
     if[.require.location.discovered~enlist`;
@@ -152,7 +153,7 @@
     } each 1_/:string libFiles;
 
     .require.markLibAsLoaded[lib; force];
-    .require.loadedLibs[lib]:enlist[`files]!enlist libFiles;
+    .require.loadedLibs[lib]:`files`initExists!(libFiles; .require.i.getInitFunc[lib]`exists);
  };
 
 / Searchs for files with the specified library prefix in the source folder supplied
@@ -176,29 +177,38 @@
         '"RequireReinitialiseAssertionError";
     ];
 
-    initFname:` sv `,lib,`init;
-    initF:@[get;initFname;`NO_INIT_FUNC];
+    if[not .require.loadedLibs[lib]`initExists;
+        :(::);
+    ];
+
+    initF:.require.i.getInitFunc lib;
     initArgs:enlist[`reinit]!enlist reinit;
 
-    if[not `NO_INIT_FUNC~initF;
-        .log.if.info "Library initialisation function detected [ Func: ",string[initFname]," ]";
+    .log.if.info "Library initialisation function detected [ Func: ",string[initF`initFname]," ]";
 
-        initRes:.require.i.protectedExecute[initF; initArgs; `INIT_FUNC_ERROR];
+    initRes:.require.i.protectedExecute[initF`initF; initArgs; `INIT_FUNC_ERROR];
 
-        if[`INIT_FUNC_ERROR~first initRes;
-            .log.if.error "Init function (",string[initFname],") failed to execute successfully [ Lib: ",string[lib]," ]. Error - ",last initRes;
+    if[`INIT_FUNC_ERROR~first initRes;
+        .log.if.error "Init function (",string[initF`initFname],") failed to execute successfully [ Lib: ",string[lib]," ]. Error - ",last initRes;
 
-            if[`backtrace in key initRes;
-                .log.if.error "Backtrace:\n",initRes`backtrace;
-            ];
-
-            '"LibraryInitFailedException (",string[initFname],")";
+        if[`backtrace in key initRes;
+            .log.if.error "Backtrace:\n",initRes`backtrace;
         ];
 
-        .require.markLibAsInited[lib; reinit];
-
-        .log.if.info "Initialised library: ",string lib;
+        '"LibraryInitFailedException (",string[initF`initFname],")";
     ];
+
+    .require.markLibAsInited[lib; reinit];
+
+    .log.if.info "Initialised library: ",string lib;
+ };
+
+/ NOTE: This function currently does not validate the object at *lib*.init is actually a function
+.require.i.getInitFunc:{[lib]
+    initFname:` sv `,lib,`init;
+    initF:@[get;initFname;`NO_INIT_FUNC];
+
+    :`initFname`initF`exists!(initFname; initF; not `NO_INIT_FUNC ~ first initF);
  };
 
 / @returns (FolderPath) The current working directory using the OS specific command
