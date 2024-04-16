@@ -32,6 +32,11 @@
 / The command line arguments parsed with '.cargs.getWithInternal'
 .boot.args:(`symbol$())!();
 
+/ If true, '--debug' was specified on the command line. Currently this enables:
+/   * Enables error trap mode 1
+/   * Stops the process from exiting when running a '--script'
+.boot.debug:0b;
+
 
 .boot.init:{
     .boot.root[`kdbCommon`app]:first ` vs hsym .z.f;
@@ -40,6 +45,12 @@
 
     if[0 < count envRoot;
         .boot.root.app:`$":",envRoot;
+    ];
+
+    .boot.debug:0 < count ss[" " sv .z.x; "-debug "];
+
+    if[.boot.debug;
+        system "e 1";
     ];
 
     -1 "Application root: ",(1_ string .boot.root.app)," | kdb-common root: ",1_ string .boot.root.kdbCommon;
@@ -86,6 +97,11 @@
     if[.ns.isSet scriptFunc;
         .log.info ("Executing script function [ Function: {} ]"; scriptFunc);
         get[scriptFunc] (`symbol$())!();
+    ];
+
+    if[.boot.debug;
+        .log.info "Script execution completed. Not exiting process as running in DEBUG mode";
+        :(::);
     ];
 
     .log.info "Script execution completed. Exiting process";
