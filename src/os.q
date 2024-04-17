@@ -93,6 +93,20 @@
     ];
  };
 
+/ @returns (Symbol) OS independent process architecture
+.os.getProcessArchitecture:{
+    bits:"I"$-2#string .z.o;
+
+    $[32=bits;
+        :`x86;
+      64=bits;
+        :`x86_64;
+      / else
+        '"UnsupportedProcessArchitectureException"
+    ];
+ };
+
+
 .os.i.getOsType:{
     :`$first string .z.o;
  };

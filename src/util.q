@@ -112,19 +112,6 @@
     :?[t;();0b;selectCols];
  };
 
-/ @returns (Symbol) OS independent process architecture
-.util.getProcessArchitecture:{
-    bits:"I"$-2#string .z.o;
-
-    $[32=bits;
-        :`x86;
-      64=bits;
-        :`x86_64;
-      / else
-        '"UnsupportedProcessArchitectureException"
-    ];
- };
-
 / Modified .Q.s to not obey the console height and width limits as specified
 / by system"c". NOTE: For tables, the console height and width limits will
 / still apply to list-type cells
@@ -169,10 +156,6 @@ k).util.showNoLimit:{
 
     set[x; 0#get x];
  };
-
-/  @param x (List) A list to check if all values are unique
-/  @returns (Boolean) True if the specified list has only unique values
-.util.isDistinct:.type.isDistinct;
 
 / String find and replace. If multiple 'find' arguments are supplied the equivalent number of
 / replace arguments must also be specified
