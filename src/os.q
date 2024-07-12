@@ -106,6 +106,12 @@
     ];
  };
 
+/  @param path (FilePath|FolderPath) The path to dereference
+/  @returns (FilePath|FolderPath) The 'real' path of specified path, removing sym links
+.os.dereferencePath:{[path]
+    :hsym `$first .os.run[`readlink; 1_ string path];
+ };
+
 
 .os.i.getOsType:{
     :`$first string .z.o;
@@ -325,6 +331,11 @@
     :"bash -c \"",x,"\"";
  };
 
+.os.l.readlink:{
+    :"readlink -f ",x;
+ };
+
+
 // Mac OSX Implementation
 .os.m.mkdir:{
     :"mkdir -p ",x;
@@ -425,4 +436,8 @@
 /  'tty' exits 0 if there is a TTY attached, 1 otherwise
 .os.m.isInteractive:{
     :"test -t 0; echo $?";
+ };
+
+.os.m.readlink:{
+    :"readlink -f ",x;
  };
