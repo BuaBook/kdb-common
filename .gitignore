@@ -1,3 +1,6 @@
 
 # vim undo files
 *~
+
+# require 'remote GET'
+.require-remote-deps/
