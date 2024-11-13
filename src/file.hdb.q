@@ -7,6 +7,10 @@
 /  @param partVal (Date|Month|Year|Long) The specific partition to lookup with 'par.txt' if present
 /  @returns (FolderPath) The expected location of the partition within the HDB
 .file.hdb.qPar:{[hdbRoot; partVal]
+    if[not .type.isFolder hdbRoot;
+        '"IllegalArgumentException";
+    ];
+
     par:.Q.par[hdbRoot; partVal; `];
     strPar:1_ string par;
 
