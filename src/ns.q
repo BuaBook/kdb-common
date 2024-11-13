@@ -12,6 +12,11 @@
 /  0b:  Uses '@' to provide legacy protected execution, returning just the exception (available with all kdb+ versions)
 .ns.cfg.protectExecWithStack:0b;
 
+/ Modifies the behaviour of '.ns.protectedExecute' when de-referencing a supplied function reference. If false, if reference
+/ is not set or not a function, a unhandled exception will be thrown. If true, the error will be handled and returned the same
+/ way as the actual execution of the function (a dictionary)
+.ns.cfg.protectExecDerefProtect:0b;
+
 
 / Value to check if the execution fails in .ns.protectedExecute
 /  @see .ns.protectedExecute
@@ -106,9 +111,23 @@
 /  @param func (Symbol) The function to execute
 /  @param args () The arguments to pass to the function. Pass generic null (::) if function requires no arguments
 /  @returns () The results of the function or a dictionary `isError`errorMsg!(`PROT_EXEC_FAILED; theError) if it fails. If running with '.ns.cfg.protectExecWithStack' enabled, `backtrace will also be added as the 2nd element
+/  @see .ns.i.getFunction
+/  @see .ns.cfg.protectExecDerefProtect
 /  @see .ns.cfg.protectExecWithStack
 .ns.protectedExecute:{[func;args]
-    func:.ns.i.getFunction func;
+    if[not .type.isFunction func;
+        if[.ns.cfg.protectExecDerefProtect;
+            func:.z.s[.ns.i.getFunction; func];
+
+            if[.ns.const.pExecFailure ~ first func;
+                :func;
+            ];
+        ];
+
+        if[not .ns.cfg.protectExecDerefProtect;
+            func:.ns.i.getFunction func;
+        ];
+    ];
 
     funcArgCount:count .ns.getFunctionArguments func;
 
