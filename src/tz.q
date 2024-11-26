@@ -13,7 +13,7 @@
 .tz.cfg.csvFilename:`$"timezone-config.csv";
 
 / The expected column types of the timezone configuration
-.tz.cfg.csvTypes:"SPJJ";
+.tz.cfg.csvTypes:"SPJ";
 
 / Optional path containing the timezone configuration. If this is not set, the init function will default to:
 /  `:require-root/config/timezone
@@ -114,8 +114,8 @@
 /  @see .tz.timezones
 .tz.i.loadTimezoneCsv:{
     timezones:.csv.load[.tz.cfg.csvTypes; .tz.csvSrcPath];
-    timezones:update gmtOffset:.convert.msToTimespan 1000*gmtOffset, dstOffset:.convert.msToTimespan 1000*dstOffset from timezones;
-    timezones:update adjustment:gmtOffset+dstOffset from timezones;
+    timezones:update gmtOffset:.convert.msToTimespan 1000*gmtOffset from timezones;
+    timezones:update adjustment:gmtOffset from timezones;
     timezones:update localDateTime:gmtDateTime+adjustment from timezones;
 
     timezones:update `g#timezoneID from `gmtDateTime xasc timezones;
