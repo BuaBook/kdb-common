@@ -66,7 +66,7 @@
     convertTable:([] timezoneID:count[timestamp]#targetTimezone; gmtDateTime:(),timestamp);
     convertRes:(::; first) .type.isAtom timestamp;
 
-    :convertRes exec gmtDateTime + adjustment from aj[`timezoneID`gmtDateTime; convertTable; .tz.timezones];
+    :convertRes exec gmtDateTime + gmtOffset from aj[`timezoneID`gmtDateTime; convertTable; .tz.timezones];
  };
 
 / Converts a timestamp in the specified timezone into the UTC timezone
@@ -82,7 +82,7 @@
     convertTable:([] timezoneID:count[timestamp]#sourceTimezone; localDateTime:(),timestamp);
     convertRes:(::; first) .type.isAtom timestamp;
 
-    :convertRes exec localDateTime - adjustment from aj[`timezoneID`localDateTime; convertTable; .tz.timezones];
+    :convertRes exec localDateTime - gmtOffset from aj[`timezoneID`localDateTime; convertTable; .tz.timezones];
  };
 
 / Converts a timestamp in the specified timezone into another specified timezone
@@ -115,8 +115,7 @@
 .tz.i.loadTimezoneCsv:{
     timezones:.csv.load[.tz.cfg.csvTypes; .tz.csvSrcPath];
     timezones:update gmtOffset:.convert.msToTimespan 1000*gmtOffset from timezones;
-    timezones:update adjustment:gmtOffset from timezones;
-    timezones:update localDateTime:gmtDateTime+adjustment from timezones;
+    timezones:update localDateTime:gmtDateTime+gmtOffset from timezones;
 
     timezones:update `g#timezoneID from `gmtDateTime xasc timezones;
 
