@@ -35,6 +35,7 @@
 .compress.defaults[`gzip]:  (17; 2; 7);
 .compress.defaults[`snappy]:(17; 3; 0);
 .compress.defaults[`lz4hc]: (17; 4; 9);
+.compress.defaults[`zstd]:  (17; 5; 10);
 
 
 .compress.init:{};
