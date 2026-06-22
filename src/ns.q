@@ -108,7 +108,11 @@
 /  @returns () The results of the function or a dictionary `isError`errorMsg!(`PROT_EXEC_FAILED; theError) if it fails. If running with '.ns.cfg.protectExecWithStack' enabled, `backtrace will also be added as the 2nd element
 /  @see .ns.cfg.protectExecWithStack
 .ns.protectedExecute:{[func;args]
-    func:.ns.i.getFunction func;
+    func:.Q.trp[.ns.i.getFunction; func; { `isError`backtrace`errorMsg!(.ns.const.pExecFailure; .Q.sbt y; x) }];
+
+    if[.ns.const.pExecFailure ~ first func;
+        :func;
+    ];
 
     funcArgCount:count .ns.getFunctionArguments func;
 
