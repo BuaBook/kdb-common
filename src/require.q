@@ -9,15 +9,17 @@
 / Table containing the state of each library loaded via require
 .require.loadedLibs:`lib xkey flip `lib`loaded`loadedTime`initExists`inited`initedTime`forced`files!"SBPBBPB*"$\:();
 
-/ Root folder to search for libraries
-.require.location.root:`;
+
+/ Search paths for 'require' libraries. Paths will be descended through (similar to 'tree')
+.require.location.paths:`symbol$();
 
 / Regexs to filter discovered files
 /  @see .require.i.tree
 .require.location.ignore:("*.git";"*target");
 
 / Complete list of discovered files from the root directory
-.require.location.discovered:enlist`;
+.require.location.discovered:`symbol$();
+
 
 / Required interface implementations for 'require' and related kdb-common libraries to function correctly
 .require.interfaces:`lib`ifFunc xkey flip `lib`ifFunc`implFunc!"SS*"$\:();
@@ -36,10 +38,7 @@
         :(::);
     ];
 
-    $[null root;
-        .require.location.root:.require.i.getCwd[];
-        .require.location.root:root
-    ];
+    .require.location.paths:.require.location.paths union (root; .require.i.getCwd[]) null root;
 
     .require.i.setDefaultInterfaces[];
 
@@ -47,13 +46,13 @@
     .require.loadedLibs[`require; `initExists]:1b;
 
     / If file tree has already been specified, don't overwrite
-    if[.require.location.discovered~enlist`;
-        .require.rescanRoot[];
+    if[0 = count .require.location.discovered;
+        .require.rescan[];
     ];
 
     .require.i.initInterfaceLibrary[];
 
-    .log.if.info "Require library initialised [ Root: ",string[.require.location.root]," ]";
+    .log.if.info ("Require library initialised [ Paths: {} ]"; .require.location.paths);
  };
 
 
@@ -103,10 +102,29 @@
     .require.i[`load`init] .' operations;
  };
 
-.require.rescanRoot:{
-    .require.location.discovered:.require.i.tree .require.location.root;
+.require.rescan:.require.rescanRoot:{
+    .log.if.debug ("Rescanning all require library paths [ Paths: {} ]"; .require.location.paths);
 
-    .log.if.info "Library root location refreshed [ File Count: ",string[count .require.location.discovered]," ]";
+    .require.location.discovered:raze .require.i.tree each .require.location.paths;
+
+    .log.if.info enlist["Library files refreshed [ Paths: {} ] [ Files: {} ]"],count each .require.location`paths`discovered;
+ };
+
+.require.addPath:{[path; rescan]
+    .log.if.info ("Adding new path to 'require' search path [ Path: {} ] [ Rescan: {} ]"; path; `no`yes rescan);
+
+    .require.location.paths:.require.location.paths union path;
+
+    if[rescan;
+        .require.rescan[];
+    ];
+ };
+
+.require.removePath:{[path]
+    .log.if.info ("Removing path from 'require' search path [ Path: {} ]"; path);
+
+    .require.location.paths:.require.location.paths except path;
+    .require.rescan[];
  };
 
 / Marks the specified library as loaded in the loaded libraries table. NOTE: This
