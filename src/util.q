@@ -116,8 +116,8 @@
 / by system"c". NOTE: For tables, the console height and width limits will
 / still apply to list-type cells
 /  @see .Q.S
-k).util.showNoLimit:{
-    :$[(::)~x;"";`/:$[10h=@r:@[.Q.S[2#0Wi-1;0];x;::];,-3!x;r]];
+.util.showNoLimit:{
+    :$[(::)~x;"";` sv $[10h=type r:@[.Q.S[2#0Wi-1;0];x;::];enlist -3!x;r]];
  };
 
 / Modified .Q.s to allow output to be tabbed by the specified number of tabs. Useful for

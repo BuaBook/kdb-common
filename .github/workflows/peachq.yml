@@ -1,0 +1,41 @@
+# Optional: not a required check.
+name: load check (optional)
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - id: pq
+        uses: peachq-org/setup-peachq@v1.0.0
+        with:
+          version: 0.92.20261116
+      # No test suite yet: boot as the README does and load every library in src/, all together and then each alone
+      # (alone catches a library that needs one it does not .require). Exit 1 if any failed to load.
+      - shell: bash
+        run: |
+          libs=$(ls src | cut -d. -f1 | sort -u); n=$(wc -l <<< "$libs")
+          chk='l:`$"," vs getenv`LIBS; k:count l inter exec lib from .require.loadedLibs where loaded; -1 "loaded ",string k; exit "j"$k<count l'
+          all=$(paste -sd, <<< "$libs")
+          LIBS=$all $QCMD "$PWD/boot.q" --load-libs "$all" -classic <<< "$chk" | tee out.txt || fail=1
+          together=$(sed -n 's/^loaded //p' out.txt)
+          alone=0
+          for l in $libs; do
+            if LIBS=$l $QCMD "$PWD/boot.q" --load-libs "$l" -classic <<< "$chk" > out.txt 2>&1; then
+              alone=$((alone + 1))
+            else
+              cat out.txt; echo "FAIL $l alone"; fail=1
+            fi
+          done
+          echo "**peachq ${{ steps.pq.outputs.version }}:** loads: ${together:-0} of $n together; $alone of $n each alone" >> "$GITHUB_STEP_SUMMARY"
+          exit ${fail:-0}
